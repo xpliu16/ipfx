@@ -68,47 +68,6 @@ def query(query, parameters=None):
         conn.close()
     return results
 
-
-def get_input_nwb_file(specimen_id):
-
-    sql="""
-    select err.storage_directory||'EPHYS_FEATURE_EXTRACTION_V2_QUEUE_'||err.id||'_input.json' as input_v2_json,
-           err.storage_directory||'EPHYS_FEATURE_EXTRACTION_QUEUE_'||err.id||'_input.json' as input_v1_json,
-           err.storage_directory||err.id||'.nwb' as nwb_file
-    from specimens sp
-    join ephys_roi_results err on err.id = sp.ephys_roi_result_id
-    where sp.id = %d
-    """ % specimen_id
-    res = query(sql)[0]
-    res = { k:v for k,v in res.items() }
-
-    # if the input_v2_json does not exist, then use input_v1_json instead:
-    if os.path.isfile(res["input_v2_json"]):
-        res["input_json"] = res["input_v2_json"]
-    else:
-        res["input_json"] = res["input_v1_json"]
-
-    nwb_file_name  = res['nwb_file']
-
-    return nwb_file_name
-
-
-def get_input_h5_file(specimen_id):
-
-    h5_res = query("""
-    select err.*, wkf.*,sp.name as specimen_name
-    from ephys_roi_results err
-    join specimens sp on sp.ephys_roi_result_id = err.id
-    join well_known_files wkf on wkf.attachable_id = err.id
-    where sp.id = %d
-    and wkf.well_known_file_type_id = 306905526
-    """ % specimen_id)
-
-    h5_file_name = os.path.join(h5_res[0]['storage_directory'], h5_res[0]['filename']) if len(h5_res) else None
-
-    return h5_file_name
-
-
 def get_sweep_states(specimen_id):
 
     sweep_states = []
@@ -160,18 +119,14 @@ def get_specimen_info_from_lims_by_id(specimen_id):
         return None, None, None
 
 
-def get_nwb_path_from_lims(ephys_roi_result):
+def get_nwb_path_from_lims(specimen_id, ftype='EphysNWB2'):
     """
-    Try to find NWBIgor file preferentially
-    If not found, look for a processed NWB file
-
-    well known file type ID for NWB files is 475137571
-    well known file type ID for NWBIgor files is 570280085
-
+    Find network path to stored NWB file
 
     Parameters
     ----------
-    ephys_roi_result: int
+    specimen_id: int
+    ftype: str, defaults to 'EphysNWB2', or try 'NWB' or 'NWBIgor'
 
     Returns
     -------
@@ -180,17 +135,15 @@ def get_nwb_path_from_lims(ephys_roi_result):
     """
 
     result = query("""
-    SELECT f.filename, f.storage_directory FROM well_known_files f
-    WHERE f.attachable_type = 'EphysRoiResult' AND f.attachable_id = %s AND f.well_known_file_type_id = 570280085
-    """ % (ephys_roi_result,))
-
-    if len(result) == 0:
-        logging.warning("Fall back to looking for NWB type")
-
-        result = query("""
-        SELECT f.filename, f.storage_directory FROM well_known_files f
-        WHERE f.attachable_type = 'EphysRoiResult' AND f.attachable_id = %s AND f.well_known_file_type_id = 475137571
-        """ % (ephys_roi_result,))
+    SELECT f.filename, f.storage_directory 
+    FROM specimens sp
+    JOIN ephys_roi_results err ON sp.ephys_roi_result_id = err.id
+    JOIN well_known_files f ON f.attachable_id = err.id
+    JOIN well_known_file_types ftype ON f.well_known_file_type_id = ftype.id
+    WHERE f.attachable_type = 'EphysRoiResult' 
+    AND sp.id = %s 
+    AND ftype.name = '%s'
+    """ % (specimen_id, ftype))
 
     result = result[0]
 
