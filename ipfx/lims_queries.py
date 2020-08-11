@@ -2,7 +2,7 @@ import os
 import glob
 import logging
 import pg8000
-
+from pathlib import Path
 from allensdk.core.authentication import credential_injector
 from allensdk.core.auth_config import LIMS_DB_CREDENTIAL_MAP
 
@@ -91,7 +91,7 @@ def get_input_nwb_file(specimen_id):
 
     nwb_file_name  = res['nwb_file']
 
-    return nwb_file_name
+    return fix_network_path(nwb_file_name)
 
 
 def get_input_h5_file(specimen_id):
@@ -105,9 +105,9 @@ def get_input_h5_file(specimen_id):
     and wkf.well_known_file_type_id = 306905526
     """ % specimen_id)
 
-    h5_file_name = os.path.join(h5_res[0]['storage_directory'], h5_res[0]['filename']) if len(h5_res) else None
+    h5_file_name = fix_network_path(os.path.join(h5_res[0]['storage_directory'], h5_res[0]['filename'])) if len(h5_res) else None
 
-    return h5_file_name
+    return fix_network_path(h5_file_name)
 
 
 def get_sweep_states(specimen_id):
@@ -197,7 +197,7 @@ def get_nwb_path_from_lims(ephys_roi_result):
 
     if result:
         nwb_path = result["storage_directory"] + result["filename"]
-        return nwb_path
+        return fix_network_path(nwb_path)
     else:
         logging.info("Cannot find NWB file")
         return None
@@ -222,11 +222,16 @@ def get_igorh5_path_from_lims(ephys_roi_result):
 
     if result:
         h5_path = result["storage_directory"] + result["filename"]
-        return h5_path
+        return fix_network_path(h5_path)
     else:
         logging.info("Cannot find Igor H5 file")
         return None
 
+def fix_network_path(lims_path):
+    # Need to have double slash for network drive
+    if not lims_path.startswith('//'):
+        lims_path = '/' + lims_path
+    return str(Path(lims_path))
 
 def project_specimen_ids(project, passed_only=True):
 
@@ -272,7 +277,7 @@ def get_fx_output_json(specimen_id):
     if res:
         err_dir = res[0]["storage_directory"]
 
-        file_list = glob.glob(os.path.join(err_dir, '*EPHYS_FEATURE_EXTRACTION_*_output.json'))
+        file_list = glob.glob(fix_network_path(os.path.join(err_dir, '*EPHYS_FEATURE_EXTRACTION_*_output.json')))
         if file_list:
             latest_file = max(file_list, key=os.path.getctime)   # get the most recent file
             return latest_file
