@@ -54,7 +54,7 @@ def sdk_nwb_information(specimen_id):
     return nwb_data_set.file_name, sweep_info
 
 
-def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
+def dataset_for_specimen_id(specimen_id, data_source='lims', ontology=None, file_list=None):
     if data_source == "lims":
         nwb_path, h5_path = lims_nwb_information(specimen_id)
         if type(nwb_path) is dict and "error" in nwb_path:
