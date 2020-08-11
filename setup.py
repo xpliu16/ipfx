@@ -59,6 +59,7 @@ setup(
     url="https://github.com/AllenInstitute/ipfx",
     packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=required,
+    python_requires = '>=3.6',
     include_package_data=True,
     setup_requires=['pytest-runner'],
     keywords=["neuroscience", "bioinformatics", "scientific"],
