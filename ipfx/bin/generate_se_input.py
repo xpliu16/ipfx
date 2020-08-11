@@ -12,7 +12,7 @@ def generate_se_input(cell_dir,
     se_input = dict()
 
     if specimen_id:
-        input_nwb_file = lq.get_input_nwb_file(specimen_id)
+        input_nwb_file = lq.get_nwb_path_from_lims(specimen_id)
 
     se_input['input_nwb_file'] = input_nwb_file
 

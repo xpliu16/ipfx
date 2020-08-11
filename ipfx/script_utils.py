@@ -25,7 +25,7 @@ def lims_nwb_information(specimen_id):
         logging.warning("No ephys ROI result found for {:d}".format(specimen_id))
         return {"error": {"type": "no_ephys_roi_result", "details": "roi ID was None"}}, None
 
-    nwb_path = lq.get_nwb_path_from_lims(roi_id)
+    nwb_path = lq.get_nwb_path_from_lims(specimen_id)
     if (nwb_path is None) or (len(nwb_path) == 0): # could not find an NWB file
         logging.warning("No NWB file for {:d}".format(specimen_id))
         return {"error": {"type": "no_nwb", "details": "empty nwb path"}}, None
