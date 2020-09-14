@@ -43,9 +43,12 @@ class Sweep(object):
     def select_epoch(self, epoch_name):
         self.selected_epoch_name = epoch_name
 
+    def align_to_start_of_epoch(self, epoch_name):
+        start_idx, end_idx = self.epochs[epoch_name]
+        self.set_time_zero_to_index(start_idx)
+
     def set_time_zero_to_index(self, time_step):
-        dt = 1. / self.sampling_rate
-        self._t = self._t - time_step*dt
+        self._t = self._t - self._t[time_step]
 
     def detect_epochs(self):
         """
@@ -63,7 +66,7 @@ class Sweep(object):
         epoch_detectors = {
             "sweep": ep.get_sweep_epoch(self.response),
             "recording": ep.get_recording_epoch(self.response),
-            "experiment": ep.get_experiment_epoch(self._i, self.sampling_rate,test_pulse),
+            "experiment": ep.get_experiment_epoch(self._i, self.sampling_rate, test_pulse),
             "stim": ep.get_stim_epoch(self.stimulus, test_pulse),
         }
 
@@ -84,10 +87,8 @@ class SweepSet(object):
             sweep.select_epoch(epoch_name)
 
     def align_to_start_of_epoch(self, epoch_name):
-
         for sweep in self.sweeps:
-            start_idx, end_idx = sweep.epochs[epoch_name]
-            sweep.set_time_zero_to_index(start_idx)
+            sweep.align_to_start_of_epoch(epoch_name)
 
     @property
     def t(self):
