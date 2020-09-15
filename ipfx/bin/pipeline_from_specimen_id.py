@@ -1,16 +1,16 @@
 import allensdk.core.json_utilities as ju
 import sys
 import os.path
-from ipfx.bin.run_pipeline import run_pipeline
-from ipfx.bin import generate_pipeline_input as gpi
+from .run_pipeline import run_pipeline
+from .generate_fx_input import generate_pipeline_input as gpi
 import ipfx.logging_utils as lu
-
+from ipfx.data_set_features import fallback_on_error
 OUTPUT_DIR = "/local1/ephys/tsts"
 
 INPUT_JSON = "pipeline_input.json"
 OUTPUT_JSON = "pipeline_output.json"
 
-
+@fallback_on_error()
 def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR):
     """
     Runs pipeline from the specimen_id
