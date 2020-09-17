@@ -7,6 +7,8 @@ from . import error as er
 def baseline_voltage(t, v, start, baseline_interval=0.1, baseline_detect_thresh=0.3, filter_frequency=1.0):
     # Look at baseline interval before start if start is defined
     if start is not None:
+        if start - baseline_interval < t[0]:
+            raise er.FeatureError("Insufficient baseline interval before stimulus for baseline voltage calculation.")
         return tsu.average_voltage(v, t, start - baseline_interval, start)
 
     logging.info("computing baseline voltage interval")
