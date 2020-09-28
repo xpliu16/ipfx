@@ -60,7 +60,7 @@ def extract_chirp_features(sweepset, **params):
     if len(amps)==0:
         raise FeatureError('No valid chirp sweeps available.')
     amp = np.stack(amps).mean(axis=0)
-    results = chirp_sweep_features(amp, freq, low_freq_max=1)
+    results = chirp_sweep_features(amp, freq, low_freq_max=2)
     return results
 
 def amp_response_asymmetric(sweep, min_freq=None, max_freq=None, n_freq=500, freq_sigma=0.25):

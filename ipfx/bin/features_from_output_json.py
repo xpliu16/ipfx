@@ -158,15 +158,18 @@ def get_complete_long_square_features(long_squares_analysis):
     sweep = long_squares_analysis.get('hero_sweep',{})
     add_features_to_record(hero_sweep_features, sweep, record, suffix='_hero')
     add_features_to_record(ls_spike_features, sweep["spikes"][0], record, suffix="_hero")
-    features = get_spike_adapt_ratio_features(spike_adapt_features, sweep["spikes"])
-    add_features_to_record(features.keys(), features, record, suffix="_hero")
 
     sweeps = long_squares_analysis.get('spiking_sweeps',{})
-    # TODO: work on dataframe / reuse code
-    for feature in mean_sweep_features:
-        key = feature+'_mean'
-        feat_list = [sweep[feature] for sweep in sweeps if feature in sweep]
-        record[key] = np.nanmean([x for x in feat_list if x is not None])
+    sweep_features_df = pd.DataFrame.from_records(sweeps)
+
+    n_adapt = 4
+    spike_sets = [sweep["spikes"] for sweep in sweeps]
+    adapt_sweep = find_spiking_sweep_by_min_spikes(sweep_features_df, spike_sets, min_spikes=n_adapt+1)
+    adapt_features = get_spike_adapt_ratio_features(spike_adapt_features, adapt_sweep.get("spikes", []), nth_spike=n_adapt)
+    record.update(adapt_features)
+
+    mean_df = sweep_features_df[mean_sweep_features].mean()
+    add_features_to_record(mean_sweep_features, mean_df, record, suffix="_mean")
     
     offset_feature_values(spike_threshold_shift_features, record, "threshold_v")
     invert_feature_values(invert_features, record)
@@ -211,6 +214,18 @@ def get_spike_adapt_ratio_features(features, spikes_set, nth_spike=5):
 
     specimen_ids = get_specimen_ids(ids, input_file, project, include_failed_cells, cell_count_limit)
     compile_lims_results(specimen_ids).to_csv(output_file)
+
+def find_spiking_sweep_by_min_spikes(spiking_features, spikes_set, min_spikes=5):
+    num_spikes = np.array([len(spikes) for spikes in spikes_set])
+    # spiking_features['spikes'] = spikes_set
+    spiking_features = spiking_features.loc[num_spikes >= min_spikes].sort_values("stim_amp")
+    spiking_features_depolarized = spiking_features[spiking_features["stim_amp"] > 0]
+
+    if spiking_features_depolarized.empty:
+        logging.warning(f"Cannot find sweep with >={min_spikes} spikes.")
+        return {}
+    else:
+        return spiking_features_depolarized.iloc[0]
 
 if __name__ == "__main__":
     main()
