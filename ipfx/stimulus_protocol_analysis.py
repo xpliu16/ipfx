@@ -216,7 +216,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
                                                            self.spx.start, self.spx.end,
                                                            self.sptx.baseline_interval)
 
-        features["tau"] = np.nanmean(calc_subthresh_features['tau'])
+        if all(np.isnan(taus)):
+            logging.warning("No valid time constant estimates, likely from signal-to-noise issues.")
+            features["tau"] = None
+        else:
+            features["tau"] = np.nanmean(calc_subthresh_features['tau'])
 
         return features
 
