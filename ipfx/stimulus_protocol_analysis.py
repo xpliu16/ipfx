@@ -73,15 +73,20 @@ class StimulusProtocolAnalysis(object):
         for sweep in sweep_set.sweeps:
             self._spikes_set.append(self.spx.process(sweep.t, sweep.v, sweep.i))
 
-        self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features, exclude_clipped=exclude_clipped)
-                                              for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set) ])
+        self._sweep_features = pd.DataFrame([
+            self.sptx.process(
+                sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features, exclude_clipped=exclude_clipped)
+            for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set)
+            ])
+        self._sweep_features["sweep_number"] = sweep_set.sweep_number
 
     def reset_basic_features(self):
         self._spikes_set = None
         self._sweep_features = None
 
     def analyze(self, sweep_set, extra_sweep_features=None, exclude_clipped=False):
-        self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features, exclude_clipped=exclude_clipped)
+        self.analyze_basic_features(
+            sweep_set, extra_sweep_features=extra_sweep_features, exclude_clipped=exclude_clipped)
         return {"spikes_set": self._spikes_set, "sweeps": self._sweep_features}
 
     def as_dict(self, features, extra_params=None):
@@ -115,6 +120,14 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
     SAG_TARGET = -100.
     HERO_MIN_AMP_OFFSET = 39.0
     HERO_MAX_AMP_OFFSET = 61.0
+    
+    extra_sweep_feature_names = [
+        'peak_deflect',
+        'stim_amp',
+        'v_baseline',
+        'sag',
+        'v_ss'
+        ]
 
     def __init__(self, spx, sptx, subthresh_min_amp, tau_frac=0.1,
                  require_subthreshold=True, require_suprathreshold=True):
@@ -126,9 +139,8 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         self.require_suprathreshold = require_suprathreshold
 
     def analyze(self, sweep_set):
-
-        extra_sweep_feature_names = ['peak_deflect','stim_amp','v_baseline','sag']
-        features = super(LongSquareAnalysis, self).analyze(sweep_set, extra_sweep_features=extra_sweep_feature_names)
+        features = super(LongSquareAnalysis, self).analyze(
+            sweep_set, extra_sweep_features=self.extra_sweep_feature_names)
 
         features["v_baseline"] = np.nanmean(self._sweep_features["v_baseline"].values)
 
@@ -182,15 +194,16 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
                 return features
 
         sags = subthreshold_sweep_features["sag"]
-        sag_eval_levels = np.array([ v[0] for v in subthreshold_sweep_features["peak_deflect"] ])
+        sag_eval_levels = np.array([ v for v, index in subthreshold_sweep_features["peak_deflect"] ])
         closest_index = np.argmin(np.abs(sag_eval_levels - self.SAG_TARGET))
 
         features["sag"] = sags.values[closest_index]
         features["vm_for_sag"] = sag_eval_levels[closest_index]
         features["subthreshold_sweeps"] = subthreshold_sweep_features
 
-        calc_subthresh_features = subthreshold_sweep_features[ (subthreshold_sweep_features["stim_amp"] < self.SUBTHRESH_MAX_AMP) & \
-                                                            (subthreshold_sweep_features["stim_amp"] > self.subthresh_min_amp) ].copy()
+        calc_subthresh_features = subthreshold_sweep_features[
+            (subthreshold_sweep_features["stim_amp"] < self.SUBTHRESH_MAX_AMP)
+            & (subthreshold_sweep_features["stim_amp"] > self.subthresh_min_amp) ].copy()
 
         if len(calc_subthresh_features) == 0:
             error_string = F"No subthreshold long square sweeps with stim_amp " \
@@ -203,9 +216,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
 
         calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
-        median_peak_time = np.median([s.t[subf.voltage_deflection(s.t, s.v, s.i, self.spx.start, self.spx.end, "min")[1]]
-                                      for s in calc_subthresh_ss.sweeps])
-        taus = [ subf.time_constant(s.t, s.v, s.i, self.spx.start, self.spx.end, median_peak_time, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
+        peak_times = np.array([ sweep_set.t[0][index] for v, index in calc_subthresh_features["peak_deflect"] ])
+        median_peak_time = np.median(peak_times)
+        taus = [ subf.time_constant(
+            s.t, s.v, s.i, self.spx.start, self.spx.end, median_peak_time, self.tau_frac, self.sptx.baseline_interval)
+                for s in calc_subthresh_ss.sweeps ]
 
         calc_subthresh_features['tau'] = taus
 
@@ -215,6 +230,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
                                                            calc_subthresh_ss.v,
                                                            self.spx.start, self.spx.end,
                                                            self.sptx.baseline_interval)
+        
+        features["input_resistance_ss"] = subf.input_resistance_from_iv_curve(
+            calc_subthresh_features["stim_amp"],
+            calc_subthresh_features["v_ss"]
+        )
 
         features["tau"] = np.nanmean(calc_subthresh_features['tau'])
 
@@ -249,16 +269,23 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         hero_min, hero_max = rheo_amp + min_offset, rheo_amp + max_offset
         spiking_features = spiking_features.sort_values("stim_amp")
-        sweep_features_range = spiking_features[(spiking_features["stim_amp"] > hero_min) & (spiking_features["stim_amp"] < hero_max)]
+        sweep_features_range = spiking_features[(spiking_features["stim_amp"] > hero_min)
+                                                & (spiking_features["stim_amp"] < hero_max)]
 
         if not sweep_features_range.empty:
             hero_features = sweep_features_range.iloc[0]
-            logging.debug("Found hero sweep with amp %f in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_features["stim_amp"], hero_min, hero_max,rheo_amp))
+            logging.debug(
+                "Found hero sweep with amp %f in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f"
+                % (hero_features["stim_amp"], hero_min, hero_max,rheo_amp))
         else:
-            logging.debug("Cannot find hero sweep in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_min, hero_max,rheo_amp))
+            logging.debug(
+                "Cannot find hero sweep in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f"
+                % (hero_min, hero_max,rheo_amp))
             index_hero = abs(hero_min - spiking_features["stim_amp"]).idxmin()
             hero_features = spiking_features.loc[index_hero]
-            logging.debug("Selecting as hero sweep with the amplitude %f closest to the min amplitude in [%f,%f] pA " % (hero_features["stim_amp"], hero_min, hero_max))
+            logging.debug(
+                "Selecting as hero sweep with the amplitude %f closest to the min amplitude in [%f,%f] pA "
+                % (hero_features["stim_amp"], hero_min, hero_max))
 
         if hero_features.empty:
             raise ValueError("Cannot find hero sweep.")
@@ -273,7 +300,8 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
 
     def analyze(self, sweep_set):
         extra_sweep_features = [ "stim_amp" ]
-        features = super(ShortSquareAnalysis, self).analyze(sweep_set, extra_sweep_features=extra_sweep_features, exclude_clipped=True)
+        features = super(ShortSquareAnalysis, self).analyze(
+            sweep_set, extra_sweep_features=extra_sweep_features, exclude_clipped=True)
 
         spiking_sweep_features = self.suprathreshold_sweep_features()
 
