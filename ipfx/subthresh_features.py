@@ -130,12 +130,32 @@ def time_constant(t, v, i, start, end, max_fit_end=None,
     return 1. / inv_tau
 
 
+def steady_state_voltage(t, v, start, end, interval=0.03):
+    """Calculate the steady-state voltage, averaging an interval at the end of the response
+
+    Parameters
+    ----------
+    t : numpy array of times in seconds
+    v : numpy array of voltages in mV
+    start : start of stimulus interval in seconds
+    end : end of stimulus interval in seconds
+    interval : length of time to average in seconds, by default 0.03
+
+    Returns
+    -------
+    v_ss : average voltage during end of stimulus interval
+    """    
+    v_ss = tsu.average_voltage(v, t, start=end - interval, end=end)
+    return v_ss
+
+
 def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     """Calculate the sag in a hyperpolarizing voltage response.
 
     Parameters
     ----------
     peak_width : window width to get more robust peak estimate in sec (default 0.005)
+    baseline_interval: window width for both baseline and steady-state voltage (default 0.03)
 
     Returns
     -------
@@ -145,7 +165,7 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     v_peak_avg = tsu.average_voltage(v, t, start=t[peak_index] - peak_width / 2.,
                                  end=t[peak_index] + peak_width / 2.)
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
-    v_steady = tsu.average_voltage(v, t, start=end - baseline_interval, end=end)
+    v_steady = steady_state_voltage(t, v, start, end, interval=baseline_interval)
     sag = (v_peak_avg - v_steady) / (v_peak_avg - v_baseline)
 
     return sag
@@ -170,7 +190,9 @@ def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):
         # the input resistance
         v = np.append(v, baseline_voltage(t_set[0], v_set[0], start, baseline_interval=baseline_interval))
         i = np.append(i, 0.)
+    return input_resistance_from_iv_curve(i, v)
 
+def input_resistance_from_iv_curve(i, v):
     A = np.vstack([i, np.ones_like(i)]).T
     m, c = np.linalg.lstsq(A, v,rcond=None)[0]
 
