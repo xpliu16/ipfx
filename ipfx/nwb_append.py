@@ -5,7 +5,7 @@ from typing import (
 
 import shutil
 
-import pynwb
+from ipfx.dataset.ephys_nwb_data import NWBHDF5IO
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 from pynwb import TimeSeries
 from pynwb import ProcessingModule
@@ -44,7 +44,7 @@ def append_spike_times(input_nwb_path: PathLike,
     else:
         nwb_path = input_nwb_path
 
-    nwb_io = pynwb.NWBHDF5IO(nwb_path, mode='a', load_namespaces=True)
+    nwb_io = NWBHDF5IO(nwb_path, mode='a', load_namespaces=True)
     nwbfile = nwb_io.read()
 
     spikes_module = "spikes"
