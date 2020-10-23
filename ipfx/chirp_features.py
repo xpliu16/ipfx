@@ -1,7 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-from __future__ import absolute_import
-
 import numpy as np
 import logging
 import pandas as pd
@@ -30,7 +26,7 @@ def extract_chirp_features_by_sweep(sweepset, **params):
             result['sweep_number'] = sweep.sweep_number
             results.append(result)
         except FeatureError as exc:
-            logging.debug(exc)
+            logging.info(exc)
         except Exception:
             msg = F"Error processing chirp sweep {sweep.sweep_number}."
             logging.warning(msg, exc_info=True)
@@ -65,6 +61,7 @@ def extract_chirp_features(sweepset, **params):
 
 def amp_response_asymmetric(sweep, min_freq=None, max_freq=None, n_freq=500, freq_sigma=0.25):
     width = 8
+    # TODO: v0 from baseline vs mean?
     sweep.align_to_start_of_epoch('stim')
     sweep.select_epoch('experiment')
     v0 = baseline_voltage(sweep.t, sweep.v, start=0)
@@ -95,7 +92,12 @@ def amp_response_asymmetric(sweep, min_freq=None, max_freq=None, n_freq=500, fre
     upper = (v[v_peaks]>0)
     lower = (v[v_peaks]<0)
     
-    freq = np.linspace(min_freq or i_freq[0], max_freq or i_freq[-1], n_freq)
+    min_freq = min_freq or i_freq[0]
+    max_freq = max_freq or i_freq[-1]
+    if i_freq[0]-min_freq > freq_sigma or max_freq-i_freq[-1] > freq_sigma:
+        raise FeatureError(
+            f"Chirp sweep{sweep.sweep_number} doesn't span desired frequencies.")
+    freq = np.linspace(min_freq, max_freq, n_freq)
     amp_upper = gauss_smooth(v_freq[upper], amp[upper], freq, freq_sigma)
     amp_lower = gauss_smooth(v_freq[lower], amp[lower], freq, freq_sigma)
     amp = np.stack([amp_upper, amp_lower]).mean(axis=0)
@@ -179,18 +181,16 @@ def chirp_sweep_features(amp, freq, low_freq_max=1.5):
     """    
     i_max = np.argmax(amp)
     z_max = amp[i_max]
-    i_cutoff = np.argmin(abs(amp - z_max/np.sqrt(2)))
+    i_cutoff = np.flatnonzero(amp > z_max/np.sqrt(2))[-1]
     low_freq_amp = np.mean(amp[freq < low_freq_max])
     features = {
         "peak_ratio": z_max/low_freq_amp,
         "peak_freq": freq[i_max],
         "3db_freq": freq[i_cutoff],
-        "r_low": low_freq_amp,
-        "r_peak": z_max,
-        # "r_high": amp[-1],
+        "peak_impedance": z_max,
+        "low_freq_impedance": low_freq_amp,
         # "phase_peak": phase[i_max],
         # "phase_low": phase[0],
-        # "phase_high": phase[-1]
     }
     return features
 

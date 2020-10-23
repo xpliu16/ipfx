@@ -98,6 +98,7 @@ chirp_features = [
     '3db_freq',
     'peak_freq',
     'peak_ratio',
+    'peak_impedance'
 ]
 
 def extract_pipeline_output(output_json, save_qc_info=False):
