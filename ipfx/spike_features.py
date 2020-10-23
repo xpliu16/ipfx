@@ -81,10 +81,11 @@ def find_widths(v, t, spike_indexes, peak_indexes, trough_indexes, clipped=None)
     thresh_to_peak_levels = np.zeros_like(trough_indexes) * np.nan
     thresh_to_peak_levels[use_indexes] = (v[peak_indexes[use_indexes]] - v[spike_indexes[use_indexes]]) / 2. + v[spike_indexes[use_indexes]]
 
+    # ignore nan comparison warning, intention is to ignore nan
+    with np.errstate(invalid='ignore'):
     # Some spikes in burst may have deep trough but short height, so can't use same
-    # definition for width
-
-    width_levels[width_levels < v[spike_indexes]] = thresh_to_peak_levels[width_levels < v[spike_indexes]]
+    # definition for width (v level would fall below threshold)
+        width_levels[width_levels < v[spike_indexes]] = thresh_to_peak_levels[width_levels < v[spike_indexes]]
 
     width_starts = np.zeros_like(trough_indexes) * np.nan
     width_starts[use_indexes] = np.array([pk - np.flatnonzero(v[pk:spk:-1] <= wl)[0] if
@@ -384,7 +385,11 @@ def estimate_adjusted_detection_parameters(v_set, t_set, interval_start, interva
         upstrokes = spkd.find_upstroke_indexes(v, t, putative_spikes, peaks, dvdt=dv)
         if upstrokes.size:
             all_upstrokes = np.append(all_upstrokes, dv[upstrokes])
-    new_thresh_frac = min_thresh / all_upstrokes.mean()
+    
+    if len(all_upstrokes) > 0:
+        new_thresh_frac = min_thresh / all_upstrokes.mean()
+    else:
+        new_thresh_frac = np.nan()
 
     return new_dv_cutoff, new_thresh_frac
 
