@@ -2,16 +2,16 @@ import allensdk.core.json_utilities as ju
 import sys
 import os.path
 from .run_pipeline import run_pipeline
-from .generate_fx_input import generate_pipeline_input as gpi
+from . import generate_pipeline_input as gpi
 import ipfx.logging_utils as lu
+import logging
 from ipfx.data_set_features import fallback_on_error
 OUTPUT_DIR = "/local1/ephys/tsts"
 
 INPUT_JSON = "pipeline_input.json"
 OUTPUT_JSON = "pipeline_output.json"
 
-@fallback_on_error()
-def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR):
+def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR, write_spikes=True):
     """
     Runs pipeline from the specimen_id
     Usage:
@@ -21,7 +21,6 @@ def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR):
 
     """
 
-    specimen_id = specimen_id
     cell_name = specimen_id
 
     cell_dir = os.path.join(output_dir, cell_name)
@@ -30,11 +29,11 @@ def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR):
         os.makedirs(cell_dir)
 
     lu.configure_logger(cell_dir)
+    logging.info(f"Processing cell {specimen_id}")
 
-    pipe_input = gpi.generate_pipeline_input(cell_dir,
-                                             specimen_id=int(specimen_id))
+    pipe_input = gpi.generate_pipeline_input(cell_dir, specimen_id=int(specimen_id))
 
-    input_json = os.path.join(cell_dir,INPUT_JSON)
+    input_json = os.path.join(cell_dir, INPUT_JSON)
     ju.write(input_json,pipe_input)
 
     #   reading back from disk
@@ -44,7 +43,8 @@ def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR):
                           pipe_input.get("stimulus_ontology_file", None),
                           pipe_input.get("qc_fig_dir",None),
                           pipe_input["qc_criteria"],
-                          pipe_input["manual_sweep_states"])
+                          pipe_input["manual_sweep_states"],
+                          write_spikes=write_spikes)
 
     ju.write(os.path.join(cell_dir,OUTPUT_JSON), pipe_output)
 
