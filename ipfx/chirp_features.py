@@ -4,6 +4,7 @@ import pandas as pd
 import scipy.fftpack as fftpack
 from scipy.signal import savgol_filter
 from scipy.interpolate import interp1d
+from collections import defaultdict
 
 from ipfx.error import FeatureError
 from ipfx.subthresh_features import baseline_voltage
@@ -22,7 +23,7 @@ def extract_chirp_features_by_sweep(sweepset, **params):
     for sweep in sweepset.sweeps:
         try:
             amp, phase, freq = chirp_sweep_amp_phase(sweep, **params)
-            result = chirp_sweep_features(amp, phase, freq)
+            result = chirp_sweep_features(amp, freq, phase)
             result['sweep_number'] = sweep.sweep_number
             results.append(result)
         except FeatureError as exc:
@@ -39,7 +40,38 @@ def extract_chirp_features_by_sweep(sweepset, **params):
     mean_results['sweeps'] = results
     return mean_results
 
-def extract_chirp_features(sweepset, **params):
+def extract_chirp_fft(sweepset, min_freq=0.4, max_freq=40.0, **params):
+    amps = []
+    phases = []
+    freqs = []
+    for i, sweep in enumerate(sweepset.sweeps):
+        try:
+            amp, phase, freq = chirp_sweep_amp_phase(sweep, min_freq=min_freq, max_freq=max_freq, **params)
+            amps.append(amp)
+            phases.append(phase)
+            freqs.append(freq)
+        except (FeatureError, ValueError) as exc:
+            logging.warning(exc)
+    if len(amps)==0:
+        raise FeatureError('No valid chirp sweeps available.')
+    # in case of multiple distinct data shapes
+    sizes = np.array([len(amp) for amp in amps])
+    if not all([s==sizes[0] for s in sizes]):
+        logging.warning(f'Unequal length chirp transforms: {sizes}.')
+        unique, counts = np.unique(sizes, return_counts=True)
+        common_size = unique[np.argmax(counts)]
+        common_ind = np.where(sizes==common_size)
+        amps = np.array(amps)[common_ind]
+        phases = np.array(phases)[common_ind]
+        freqs = np.array(freqs)[common_ind]
+        
+    amp = np.stack(amps).mean(axis=0)
+    phase = np.stack(phases).mean(axis=0)
+    low_freq_max = min_freq + 0.1
+    results = chirp_sweep_features(amp, freq, phase, low_freq_max=low_freq_max)
+    return results
+
+def extract_chirp_peaks(sweepset, **params):
     amps = []
     min_freq=None
     max_freq=None
@@ -56,7 +88,8 @@ def extract_chirp_features(sweepset, **params):
     if len(amps)==0:
         raise FeatureError('No valid chirp sweeps available.')
     amp = np.stack(amps).mean(axis=0)
-    results = chirp_sweep_features(amp, freq, low_freq_max=2)
+    low_freq_max = min_freq + 0.1
+    results = chirp_sweep_features(amp, freq, low_freq_max=low_freq_max)
     return results
 
 def amp_response_asymmetric(sweep, min_freq=None, max_freq=None, n_freq=500, freq_sigma=0.25):
@@ -64,7 +97,8 @@ def amp_response_asymmetric(sweep, min_freq=None, max_freq=None, n_freq=500, fre
     # TODO: v0 from baseline vs mean?
     sweep.align_to_start_of_epoch('stim')
     sweep.select_epoch('experiment')
-    v0 = baseline_voltage(sweep.t, sweep.v, start=0)
+    # v0 = baseline_voltage(sweep.t, sweep.v, start=0, baseline_interval=0.025)
+    v0 = np.mean(sweep.v)
     sweep.select_epoch('stim')
     t = sweep.t
 
@@ -103,7 +137,7 @@ def amp_response_asymmetric(sweep, min_freq=None, max_freq=None, n_freq=500, fre
     amp = np.stack([amp_upper, amp_lower]).mean(axis=0)
     return amp, freq
 
-def chirp_sweep_amp_phase(sweep, min_freq=0.4, max_freq=40.0, filter_bw=2, filter=True, **transform_params):
+def chirp_sweep_amp_phase(sweep, min_freq=0.4, max_freq=40.0, filter_bw=1, filter=True, **transform_params):
     """ Calculate amplitude and phase of chirp response
 
     Parameters
@@ -137,7 +171,7 @@ def chirp_sweep_amp_phase(sweep, min_freq=0.4, max_freq=40.0, filter_bw=2, filte
     if filter:
         # pick odd number, approx number of points for smooth_bw interval
         n_filt = int(np.rint(filter_bw/2/(freq[1]-freq[0])))*2 + 1
-        filt = lambda x: savgol_filter(x, n_filt, 5)
+        filt = lambda x: savgol_filter(x, n_filt, polyorder=1)
         amp, phase = map(filt, [amp, phase])
 
     return amp, phase, freq
@@ -167,13 +201,14 @@ def transform_sweep(sweep, n_sample=10000):
 
     return v_fft[:nfreq], i_fft[:nfreq], freq
 
-def chirp_sweep_features(amp, freq, low_freq_max=1.5):
+def chirp_sweep_features(amp, freq, phase=None, low_freq_max=1.0):
     """Calculate a set of characteristic features from the impedance amplitude profile (ZAP).
     Peak response is measured relative to a low-frequency average response.
 
     Args:
         amp (ndarray): impedance amplitude (generalized resistance)
         freq (ndarray): frequencies corresponding to amp responses
+        phase (ndarray, optional): phase shifts of response if not provided, phase features ignored.
         low_freq_max (float, optional): Upper frequency cutoff for low-frequency average reference value. Defaults to 1.5.
 
     Returns:
@@ -181,17 +216,30 @@ def chirp_sweep_features(amp, freq, low_freq_max=1.5):
     """    
     i_max = np.argmax(amp)
     z_max = amp[i_max]
-    i_cutoff = np.flatnonzero(amp > z_max/np.sqrt(2))[-1]
+    i_3db = np.flatnonzero(amp > z_max/np.sqrt(2))[-1]
     low_freq_amp = np.mean(amp[freq < low_freq_max])
     features = {
         "peak_ratio": z_max/low_freq_amp,
         "peak_freq": freq[i_max],
-        "3db_freq": freq[i_cutoff],
+        "3db_freq": freq[i_3db],
         "peak_impedance": z_max,
         "low_freq_impedance": low_freq_amp,
-        # "phase_peak": phase[i_max],
-        # "phase_low": phase[0],
     }
+    if phase is not None:
+        if any(phase > 0):
+            i_sync = np.flatnonzero(phase > 0)[-1]
+            dfreq = freq[1] - freq[0]
+            total_phase = np.mean(phase[phase>0])*dfreq
+        else:
+            i_sync = 0
+            total_phase = 0
+        phase_features = {
+            "sync_freq": freq[i_sync],
+            "phase_peak": phase[i_max],
+            "phase_low": phase[0],
+            "total_inductive_phase": total_phase,
+        }
+        features.update(phase_features)
     return features
 
 def gauss_smooth(x, y, x_eval, sigma):
