@@ -35,6 +35,7 @@ def process_file_list(files, cell_ids=None, output=None, save_qc_info=False):
 # from cell_features.long_squares
 ls_features = [
     "input_resistance",
+    "input_resistance_ss",
     "tau",
     "v_baseline",
     "sag",
