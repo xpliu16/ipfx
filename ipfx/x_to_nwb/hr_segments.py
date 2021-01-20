@@ -172,13 +172,16 @@ class Segment(ABC):
 
         if segmentRec.VoltageSource == "Constant":
 
-            if channelRec.StimToDacID['UseRelative']:
-                return segmentRec.Voltage + channelRec.Holding
+            if not channelRec.StimToDacID['UseRelative']:
+                return segmentRec.Voltage - channelRec.Holding
             else:
                 return segmentRec.Voltage
 
         elif segmentRec.VoltageSource == "Hold":
-            return channelRec.Holding
+            if not channelRec.StimToDacID['UseRelative']:
+                return channelRec.Holding
+            else:
+                return 0.0
         else:
             raise ValueError(f"Unsupported voltage source {segmentRec.VoltageSource}")
 
