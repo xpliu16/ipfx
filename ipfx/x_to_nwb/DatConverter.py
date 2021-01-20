@@ -321,7 +321,11 @@ class DatConverter:
         if bundle.amp:
             seriesIndex = series.AmplStateSeries - 1
             stateIndex = trace.AmplIndex - 1
-            ampState = bundle.amp[seriesIndex][stateIndex].AmplifierState
+            # use AmplifierSeriesRecord.SeriesCount as index?
+            try:
+                ampState = bundle.amp[seriesIndex][stateIndex].AmplifierState
+            except IndexError:
+                return None
 
             if DatConverter._isValidAmplifierState(ampState):
                 return ampState
