@@ -60,6 +60,9 @@ class DatConverter:
             return [[x] for x in pul]
 
         for elem in generateList(multipleGroupsPerFile, self.bundle.pul):
+            group_name = elem[0].Label
+            if group_name=='E-10':
+                continue
 
             nwbFile = self._createFile()
 
@@ -80,7 +83,7 @@ class DatConverter:
                 outFileFmt = outFile
             else:
                 name, suffix = os.path.splitext(outFile)
-                outFileFmt = f"{name}-{elem[0].GroupCount}{suffix}"
+                outFileFmt = f"{group_name}{suffix}"
 
             with NWBHDF5IO(outFileFmt, "w") as io:
                 io.write(nwbFile, cache_spec=True)
