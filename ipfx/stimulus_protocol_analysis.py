@@ -137,6 +137,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         self.tau_frac = tau_frac
         self.require_subthreshold = require_subthreshold
         self.require_suprathreshold = require_suprathreshold
+        fallback = er.fallback_on_error(fallback_value={}, return_error=False)
+        if not self.require_subthreshold:
+            self.analyze_subthreshold = fallback(self.analyze_subthreshold)
+        if not self.require_suprathreshold:
+            self.analyze_suprathreshold = fallback(self.analyze_suprathreshold)
 
     def analyze(self, sweep_set):
         features = super(LongSquareAnalysis, self).analyze(
@@ -157,11 +162,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         spiking_sweep_features = self.suprathreshold_sweep_features()
 
         if len(spiking_sweep_features) == 0:
-            if self.require_suprathreshold:
-                raise er.FeatureError("No spiking long square sweeps, cannot compute cell features.")
-            else:
-                logging.info("No spiking long square sweeps: cannot compute related cell features.")
-                return features
+            raise er.FeatureError("No spiking long square sweeps, cannot compute spiking features.")
 
         rheobase_sweep_features = self.find_rheobase_sweep(spiking_sweep_features)
 
@@ -187,11 +188,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         subthreshold_sweep_features = self.subthreshold_sweep_features()
 
         if len(subthreshold_sweep_features) == 0:
-            if self.require_subthreshold:
-                raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
-            else:
-                logging.info("No subthreshold long square sweeps: cannot compute related cell features.")
-                return features
+            raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate subthreshold features.")
 
         sags = subthreshold_sweep_features["sag"]
         sag_eval_levels = np.array([ v for v, index in subthreshold_sweep_features["peak_deflect"] ])
@@ -208,7 +205,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         if len(calc_subthresh_features) == 0:
             error_string = F"No subthreshold long square sweeps with stim_amp " \
                            F"in range [{self.subthresh_min_amp,self.SUBTHRESH_MAX_AMP}] " \
-                           F"Cannot evaluate cell features."
+                           F"Cannot evaluate input resistance or tau."
             if self.require_subthreshold:
                 raise er.FeatureError(error_string)
             else:
@@ -249,10 +246,12 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         del out["spikes_set"]
 
         for k in [ "sweeps", "subthreshold_membrane_property_sweeps", "subthreshold_sweeps", "spiking_sweeps" ]:
-            out[k] = self._sweeps_to_dict(out[k], extra_params)
+            if k in out:
+                out[k] = self._sweeps_to_dict(out[k], extra_params)
 
         for k in [ "hero_sweep", "rheobase_sweep" ]:
-            out[k] = self._sweep_to_dict(out[k], extra_params)
+            if k in out:
+                out[k] = self._sweep_to_dict(out[k], extra_params)
 
         return out
 
@@ -263,7 +262,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         spiking_features_depolarized = spiking_features[spiking_features["stim_amp"] > 0]
 
         if spiking_features_depolarized.empty:
-            raise ValueError("Cannot find rheobase sweep in spiking sweeps with amplitudes:")
+            raise er.FeatureError("Cannot find rheobase sweep; no depolarizing spiking sweeps.")
         else:
             return spiking_features_depolarized.iloc[0]
 
@@ -292,7 +291,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
                 % (hero_features["stim_amp"], hero_min, hero_max))
 
         if hero_features.empty:
-            raise ValueError("Cannot find hero sweep.")
+            raise er.FeatureError("Cannot find hero sweep.")
 
         return hero_features
 
