@@ -190,11 +190,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         if len(subthreshold_sweep_features) == 0:
             raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate subthreshold features.")
 
-        sags = subthreshold_sweep_features["sag"]
         sag_eval_levels = np.array([ v for v, index in subthreshold_sweep_features["peak_deflect"] ])
         closest_index = np.argmin(np.abs(sag_eval_levels - self.SAG_TARGET))
 
-        features["sag"] = sags.values[closest_index]
+        features["sag"] = subthreshold_sweep_features["sag"].values[closest_index]
+        features["sag_peak_t"] = subthreshold_sweep_features["sag_peak_t"].values[closest_index]
         features["vm_for_sag"] = sag_eval_levels[closest_index]
         features["subthreshold_sweeps"] = subthreshold_sweep_features
 

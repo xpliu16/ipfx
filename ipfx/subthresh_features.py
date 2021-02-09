@@ -161,14 +161,15 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     -------
     sag : fraction that membrane potential relaxes back to baseline
     """
-    v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
+    v_peak, peak_index = voltage_deflection(t, v, i, start, end, deflect_type=None)
     v_peak_avg = tsu.average_voltage(v, t, start=t[peak_index] - peak_width / 2.,
                                  end=t[peak_index] + peak_width / 2.)
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
     v_steady = steady_state_voltage(t, v, start, end, interval=baseline_interval)
     sag = (v_peak_avg - v_steady) / (v_peak_avg - v_baseline)
+    t_peak = t[peak_index] - start
 
-    return sag
+    return sag, t_peak
 
 
 def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):

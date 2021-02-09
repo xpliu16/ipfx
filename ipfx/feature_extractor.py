@@ -283,7 +283,7 @@ class SpikeTrainFeatureExtractor(object):
             features['v_ss'] = subf.steady_state_voltage(t, v, self.start, self.end, self.baseline_interval)
 
         if 'sag' in extra_features:
-            features['sag'] = subf.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
+            features['sag'], features['sag_peak_t'] = subf.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
 
         if features["avg_rate"] > 0:
             if 'pause' in extra_features:
