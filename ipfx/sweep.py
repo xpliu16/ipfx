@@ -41,9 +41,13 @@ class Sweep(object):
         return self._i[start_idx:end_idx+1]
 
     def select_epoch(self, epoch_name):
+        if self.epochs[epoch_name] is None:
+            raise ValueError(f"{epoch_name} epoch is invalid.")
         self.selected_epoch_name = epoch_name
 
     def align_to_start_of_epoch(self, epoch_name):
+        if self.epochs[epoch_name] is None:
+            raise ValueError(f"{epoch_name} epoch is invalid.")
         start_idx, end_idx = self.epochs[epoch_name]
         self.set_time_zero_to_index(start_idx)
 
