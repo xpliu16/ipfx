@@ -58,14 +58,19 @@ class EphysDataSet(object):
         if not hasattr(self, "_sweep_table"):
             sweeps: List[Dict] = []
             for num in self._data.sweep_numbers:
-                current = self._data.get_sweep_metadata(num)
+                try:
+                    current = self._data.get_sweep_metadata(num)
 
-                if self._sweep_info:
-                    info = self._sweep_info.get(num, None)
-                    if info is None:
-                        continue
-                    current.update(info)
-                sweeps.append(current)
+                    if self._sweep_info:
+                        info = self._sweep_info.get(num, None)
+                        if info is None:
+                            # skip this sweep if missing from sweep_info?
+                            continue
+                        current.update(info)
+                    sweeps.append(current)
+                except ValueError:
+                    logging.warning(f"Dropping invalid sweep {num}.", exc_info=True)
+                    continue
 
             self._sweep_table = pd.DataFrame(sweeps)
         return self._sweep_table
