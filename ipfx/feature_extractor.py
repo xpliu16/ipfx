@@ -117,7 +117,9 @@ class SpikeFeatureExtractor(object):
         troughs = spkd.find_trough_indexes(v, t, thresholds, peaks, clipped, self.end)
         downstrokes = spkd.find_downstroke_indexes(v, t, peaks, troughs, clipped, dvdt=dvdt)
         trough_details, clipped = spkf.analyze_trough_details(v, t, thresholds, peaks, clipped, self.end,
-                                                            dvdt=dvdt)
+                                                            dvdt=dvdt,
+                                                            adp_thresh=0,
+                                                            adp_max_delta_t=0.015)
 
         widths = spkf.find_widths(v, t, thresholds, peaks, trough_details[1], clipped)
 

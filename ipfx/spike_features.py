@@ -194,12 +194,14 @@ def analyze_trough_details(v, t, spike_indexes, peak_indexes, clipped=None, end=
                 if zero_return_vals.size:
                     putative_adp_index = zero_return_vals[0] + cross
                     min_index = v[putative_adp_index:next_spk].argmin() + putative_adp_index
-                    if (v[putative_adp_index] - v[min_index] >= tol and
-                            v[putative_adp_index] - v[terminated] <= adp_max_delta_v and
+                    if (v[putative_adp_index] - v[terminated] <= adp_max_delta_v and
                             t[putative_adp_index] - t[terminated] <= adp_max_delta_t):
                         adp_index = putative_adp_index
-                        slow_phase_min_index = min_index
-                        isi_type = "detour"
+                        if v[putative_adp_index] - v[min_index] >= tol:
+                            slow_phase_min_index = min_index
+                            isi_type = "detour"
+                        else:
+                            isi_type = "direct"
 
         if np.isnan(adp_index):
             v_term = v[terminated]
@@ -237,7 +239,7 @@ def analyze_trough_details(v, t, spike_indexes, peak_indexes, clipped=None, end=
     # magnitude of the difference will be less than in many of the erroneous
     # cases seen otherwise
 
-    output[2][-1] = np.nan # ADP
+    # output[2][-1] = np.nan # ADP
     output[3][-1] = np.nan # slow trough
 
     clipped[~clipped] = update_clipped
