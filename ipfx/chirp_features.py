@@ -67,6 +67,7 @@ def extract_chirp_fft(sweepset, min_freq=0.4, max_freq=40.0, **params):
         
     amp = np.stack(amps).mean(axis=0)
     phase = np.stack(phases).mean(axis=0)
+    freq = freqs[0]
     low_freq_max = min_freq + 0.1
     results = chirp_sweep_features(amp, freq, phase, low_freq_max=low_freq_max)
     return results

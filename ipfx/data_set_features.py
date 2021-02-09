@@ -342,7 +342,7 @@ def extract_cell_chirp_features(data_set):
         raise er.FeatureError("No chirp sweeps available for feature extraction")
     
     sweepset = data_set.sweep_set(sweep_numbers)
-    chirp_features = chf.extract_chirp_features(sweepset)
+    chirp_features = chf.extract_chirp_fft(sweepset)
     return chirp_features
 
 def extract_data_set_features(data_set, subthresh_min_amp=None):
