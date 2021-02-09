@@ -78,7 +78,7 @@ def extract_recording_date(data_set, tags):
     return recording_date
 
 
-def extract_clamp_seal(data_set, tags, manual_values=None):
+def extract_clamp_seal(data_set, tags, manual_values={}):
     """
 
     Parameters
@@ -124,7 +124,7 @@ def extract_clamp_seal(data_set, tags, manual_values=None):
     return seal_gohm
 
 
-def extract_input_and_access_resistance(data_set, tags, manual_values=None):
+def extract_input_and_access_resistance(data_set, tags, manual_values={}):
     """
     Measure input and series (access) resistance in two steps:
         1. finding the breakin sweep
