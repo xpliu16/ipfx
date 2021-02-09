@@ -110,7 +110,7 @@ class EphysNWBData(EphysDataInterface):
 
     @lru_cache(maxsize=None)
     def _get_series(self, sweep_number: int,
-                    series_class: Tuple[Type[PatchClampSeries]]):
+                    series_class: Tuple[Type[PatchClampSeries], ...]):
         """Returns PatchClampSeries of the requested sweep number and type.
 
         The results of this function are cached in order to speed up data access
@@ -121,7 +121,7 @@ class EphysNWBData(EphysDataInterface):
         sweep_number : int
             Integer specifying the sweep number requested.
 
-        series_class : Tuple[Type[pynwb.PatchClampSeries]]
+        series_class : EphysNWBData.STIMULUS or EphysNWBData.RESPONSE
             The type of series requested (i.e. stimulus or response series).
 
         Returns
@@ -132,8 +132,8 @@ class EphysNWBData(EphysDataInterface):
         Raises
         ------
         TypeError
-            If sweep_number is not an integer or series_class is not a stimulus
-            or response PatchClampSeries
+            If sweep_number is not an integer or series_class is not 
+            EphysNWBData.STIMULUS or EphysNWBData.RESPONSE
         ValueError
             If there are no TimeSeries found for this sweep number or if there
             is not exactly one matching PatchClampSeries of the requested type.
@@ -167,26 +167,27 @@ class EphysNWBData(EphysDataInterface):
         else:
             # check series type so we can display an appropriate error
 
-            if isinstance(series_class, self.STIMULUS):
+            if series_class == self.STIMULUS:
                 series_name = "stimulus"
-            elif isinstance(series_class, self.RESPONSE):
+            elif series_class == self.RESPONSE:
                 series_name = "response"
             else:
                 raise TypeError(
-                    f"{type(series_class)} is not a stimulus or response PatchClampSeries"
+                    f"{series_class} is not EphysNWBData.STIMULUS or EphysNWBData.RESPONSE"
                 )
 
             if num_series == 0:
                 raise ValueError(
                     f"Could not find any {series_name} PatchClampSeries "
-                    f"for sweep number {sweep_number}."
+                    f"for {series[0].stimulus_description} sweep number "
+                    f"{sweep_number} ({len(series)} PatchClampSeries total)."
                 )
             else:
                 # check how many matching series we have
                 raise ValueError(
                     f"Found {num_series} {series_name} PatchClampSeries "
-                    f"{[s.name for s in matching_series]} "
-                    f"for sweep number {sweep_number}."
+                    f"{[s.name for s in matching_series]} for "
+                    f"{series[0].stimulus_description} sweep number {sweep_number}."
                 )
 
     def get_sweep_data(
