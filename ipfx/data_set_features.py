@@ -33,7 +33,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-import functools
+# import functools
 import numpy as np
 import logging
 from .feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
@@ -45,6 +45,7 @@ from . import stim_features as stf
 from . import feature_record as fr
 from . import error as er
 from . import logging_utils as lu
+from .error import fallback_on_error, record_errors
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
@@ -69,34 +70,6 @@ TEST_PULSE_DURATION_SEC = 0.4
 def detection_parameters(stimulus_name):
     return DETECTION_PARAMETERS.get(stimulus_name, {})
 
-
-def record_errors(fn):
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        result, errors = fn(*args, **kwargs)
-        failed = (errors is not None)
-        return (
-            result,
-            {'failed_fx': failed,
-             'fail_fx_message': str(errors) if failed else None}
-            )
-    return wrapper
-
-
-def fallback_on_error(fallback_value=None, catch_errors=(Exception)):
-    def fallback_on_error_decorator(fn):
-        @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
-            try:
-                result = fn(*args, **kwargs)
-                error = None
-            except catch_errors as e:
-                logging.warning(e, exc_info=True)
-                result = fallback_value
-                error = e
-            return result, error
-        return wrapper
-    return fallback_on_error_decorator
 
 
 def extractors_for_sweeps(sweep_set,
