@@ -41,6 +41,14 @@ def main():
         help="If true will attempt to append spike times to the nwb file",
     )
     parser.add_argument(
+        "--cell_name", type=str, default=None,
+        help=(
+            "Name to use for output subdirectory"
+            "defaults to the extensionless "
+            "basename of the input NWB file)"
+        )
+    )
+    parser.add_argument(
         "--input_json", type=str, default="input.json",
         help=(
             "write pipeline input json file here (relative to "
@@ -75,7 +83,7 @@ def main():
 
     input_nwb_file_basename = os.path.basename(input_nwb_file)
 
-    cell_name = os.path.splitext(input_nwb_file_basename)[0]
+    cell_name = args["cell_name"] or os.path.splitext(input_nwb_file_basename)[0]
     cell_dir = os.path.join(output_dir, cell_name)
     os.makedirs(cell_dir, exist_ok=True)
 
