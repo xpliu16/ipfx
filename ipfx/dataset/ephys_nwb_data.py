@@ -257,6 +257,8 @@ class EphysNWBData(EphysDataInterface):
                 'sweep_number': sweep_number,
                 'bias_current': rs.bias_current,
                 'bridge_balance': rs.bridge_balance,
+                'capacitance_compensation': rs.capacitance_compensation,
+                'sampling_rate': rs.rate,
                 'clamp_mode': "CurrentClamp"
             }
         else:

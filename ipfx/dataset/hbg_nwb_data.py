@@ -34,6 +34,8 @@ class HBGNWBData(EphysNWBData):
             "stimulus_units": self.get_stimulus_unit(sweep_number),
             "bridge_balance_mohm": get_finite_or_none(attrs, "bridge_balance"),
             "leak_pa": get_finite_or_none(attrs, "bias_current"),
+            "capacitance_compensation": get_finite_or_none(attrs, "capacitance_compensation"),
+            "sampling_rate": get_finite_or_none(attrs, "sampling_rate"),
             "stimulus_scale_factor": get_finite_or_none(attrs, "gain"),
             "stimulus_code": self.get_stimulus_code(sweep_number),
             "stimulus_code_ext": self.get_stimulus_code_ext(sweep_number),
