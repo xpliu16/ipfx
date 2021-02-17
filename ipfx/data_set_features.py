@@ -366,7 +366,8 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
         extract_sweep_features(data_set, iclamp_sweeps)
 
     # shuffle peak deflection for the subthreshold long squares
-    if not feature_states['long_squares_state']['failed_fx']:
+    if (not feature_states['long_squares_state']['failed_fx']
+        and not feature_states['sweep_features_state']['failed_fx']):
         for s in cell_features["long_squares"]["subthreshold_sweeps"]:
             sweep_features[s['sweep_number']]['peak_deflect'] = s['peak_deflect']
 
