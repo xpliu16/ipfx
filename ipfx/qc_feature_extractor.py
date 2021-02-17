@@ -283,7 +283,7 @@ def sweep_qc_features(data_set):
 
         sweep_num = sweep_info['sweep_number']
         sweep = data_set.sweep(sweep_num)
-        is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
+        is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names + ontology.chirp_names
         tags = check_sweep_integrity(sweep, is_ramp)
         sweep_features["tags"] = tags
 
