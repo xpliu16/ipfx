@@ -1,4 +1,5 @@
 import sys
+import warnings
 
 import numpy as np
 import scipy.signal as signal
@@ -44,10 +45,13 @@ def calculate_dvdt(v, t, filter=None):
         delta_t = t[1] - t[0]
         sample_freq = 1. / delta_t
         filt_coeff = (filter * 1e3) / (sample_freq / 2.) # filter kHz -> Hz, then get fraction of Nyquist frequency
-        if filt_coeff < 0 or filt_coeff >= 1:
-            raise ValueError("bessel coeff ({:f}) is outside of valid range [0,1); cannot filter sampling frequency {:.1f} kHz with cutoff frequency {:.1f} kHz.".format(filt_coeff, sample_freq / 1e3, filter))
-        b, a = signal.bessel(4, filt_coeff, "low")
-        v_filt = signal.filtfilt(b, a, v, axis=0)
+        if filt_coeff < 0 or filt_coeff > 0.5:
+            # raise ValueError("bessel coeff ({:f}) is outside of valid range [0,1); cannot filter sampling frequency {:.1f} kHz with cutoff frequency {:.1f} kHz.".format(filt_coeff, sample_freq / 1e3, filter))
+            warnings.warn("Skipping filtering at {filter} kHz for sampling at {sample_freq} Hz.")
+            v_filt = v
+        else:
+            b, a = signal.bessel(4, filt_coeff, "low")
+            v_filt = signal.filtfilt(b, a, v, axis=0)
         dv = np.diff(v_filt)
     else:
         dv = np.diff(v)
