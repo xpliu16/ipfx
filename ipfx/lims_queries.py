@@ -145,7 +145,11 @@ def get_nwb_path_from_lims(specimen_id, ftype='EphysNWB2'):
     AND sp.id = %s 
     AND ftype.name = '%s'
     """ % (specimen_id, ftype))
-
+    
+    if len(result) == 0:
+        logging.info("No NWB file for specimen.")
+        return None
+    
     result = result[0]
 
     if result:

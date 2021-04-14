@@ -1,6 +1,7 @@
 import allensdk.core.json_utilities as ju
 import os
 import ipfx.lims_queries as lq
+from ipfx.error import FeatureError
 import argparse
 
 
@@ -13,7 +14,8 @@ def generate_se_input(cell_dir,
 
     if specimen_id:
         input_nwb_file = lq.get_nwb_path_from_lims(specimen_id)
-
+    if input_nwb_file is None:
+        raise FeatureError("No NWB file found.")
     se_input['input_nwb_file'] = input_nwb_file
 
     if not os.path.exists(cell_dir):

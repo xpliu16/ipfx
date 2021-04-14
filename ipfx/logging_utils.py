@@ -2,16 +2,17 @@ import os
 import logging
 
 
-def configure_logger(cell_dir):
+def configure_logger(cell_dir, show_log=True):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     logger.handlers = []
     file_handler = logging.FileHandler(filename=os.path.join(cell_dir,"log.txt"), mode='w')
     logger.addHandler(file_handler)
-    
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
-    logger.addHandler(stream_handler)
+
+    if show_log:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+        logger.addHandler(stream_handler)
 
 
 def log_pretty_header(header, level=1, top_line_break=True, bottom_line_break=True):

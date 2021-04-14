@@ -5,13 +5,12 @@ from .run_pipeline import run_pipeline
 from . import generate_pipeline_input as gpi
 import ipfx.logging_utils as lu
 import logging
-from ipfx.data_set_features import fallback_on_error
-OUTPUT_DIR = "/local1/ephys/tsts"
+OUTPUT_DIR = "./ephys_pipeline_output"
 
 INPUT_JSON = "pipeline_input.json"
 OUTPUT_JSON = "pipeline_output.json"
 
-def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR, write_spikes=True):
+def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR, write_spikes=True, show_log=True):
     """
     Runs pipeline from the specimen_id
     Usage:
@@ -28,7 +27,7 @@ def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR, write_spikes=True):
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)
 
-    lu.configure_logger(cell_dir)
+    lu.configure_logger(cell_dir, show_log=show_log)
     logging.info(f"Processing cell {specimen_id}")
 
     pipe_input = gpi.generate_pipeline_input(cell_dir, specimen_id=int(specimen_id))
