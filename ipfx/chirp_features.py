@@ -209,8 +209,8 @@ def chirp_sweep_features(amp, freq, phase=None, low_freq_max=1.0):
     Args:
         amp (ndarray): impedance amplitude (generalized resistance)
         freq (ndarray): frequencies corresponding to amp responses
-        phase (ndarray, optional): phase shifts of response if not provided, phase features ignored.
-        low_freq_max (float, optional): Upper frequency cutoff for low-frequency average reference value. Defaults to 1.5.
+        phase (ndarray, optional): phase shifts of response (if not provided, phase features ignored.)
+        low_freq_max (float, optional): Upper frequency cutoff for low-frequency average reference value. Defaults to 1.0.
 
     Returns:
         dict: features
