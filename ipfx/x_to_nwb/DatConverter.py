@@ -61,7 +61,7 @@ class DatConverter:
 
         for elem in generateList(multipleGroupsPerFile, self.bundle.pul):
             group_name = elem[0].Label
-            if group_name=='E-10':
+            if group_name is None or group_name=='' or group_name.startswith('E-'):
                 continue
 
             nwbFile = self._createFile()
@@ -651,6 +651,9 @@ class DatConverter:
                                 bridge_balance = 1.0 / ampState.GSeries
                             else:
                                 bridge_balance = np.nan
+                                
+                            if ampState and ampState.RsOn:
+                                bridge_balance = ampState.RsFraction * ampState.RsValue
 
                             acquistion_data = seriesClass(name=name,
                                                           data=data,
