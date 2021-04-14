@@ -237,7 +237,7 @@ class EphysDataSet(object):
             sweep_data["stimulus"],
             sweep_data["response"], 
             sweep_metadata["clamp_mode"], 
-            enforce_equal_length=True,
+            enforce_equal_length=False,
         )
 
         try:
