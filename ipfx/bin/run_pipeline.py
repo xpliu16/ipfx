@@ -29,13 +29,14 @@ def run_pipeline(
         update_ontology=update_ontology
     )
 
-    sweep_props.drop_tagged_sweeps(se_output["sweep_features"])
-    sweep_props.remove_sweep_feature("tags", se_output["sweep_features"])
+    sweep_features = se_output["sweep_features"].copy()
+    sweep_props.drop_tagged_sweeps(sweep_features)
+    sweep_props.remove_sweep_feature("tags", sweep_features)
 
     qc_output = run_qc(
         stimulus_ontology_file,
         se_output["cell_features"],
-        se_output["sweep_features"],
+        sweep_features,
         qc_criteria
     )
 
@@ -43,7 +44,7 @@ def run_pipeline(
         manual_sweep_states, qc_output["sweep_states"]
     )
     sweep_props.assign_sweep_states(
-        qc_output["sweep_states"], se_output["sweep_features"]
+        qc_output["sweep_states"], sweep_features
     )
 
     fx_output = run_feature_extraction(
@@ -51,7 +52,7 @@ def run_pipeline(
         stimulus_ontology_file,
         output_nwb_file,
         qc_fig_dir,
-        se_output['sweep_features'],
+        sweep_features,
         se_output['cell_features'],
         write_spikes,
     )

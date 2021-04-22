@@ -18,12 +18,12 @@ def override_auto_sweep_states(manual_sweep_states,sweep_states):
 
 def assign_sweep_states(sweep_states, sweep_features):
     """
-    Assign sweep state to all sweeps
+    Assign sweep state (passed or not) to all sweeps in sweep_features (in place) 
 
     Parameters
     ----------
-    sweep_states: dict of sweep states
-    sweep_features: list of dics of sweep features
+    sweep_states: list of dicts of sweep states
+    sweep_features: list of dicts of sweep features
 
     Returns
     -------
