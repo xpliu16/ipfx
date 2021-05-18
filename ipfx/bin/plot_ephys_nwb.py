@@ -1,4 +1,5 @@
 import sys
+import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 from ipfx.dataset.create import create_ephys_data_set
@@ -17,6 +18,7 @@ def plot_data_set(data_set,
             stimuli_exclude: Optional[Collection[str]] = None,
             show_amps: Optional[bool] = True,
             qc_sweeps: Optional[bool] = True,
+            figsize=(15, 7),
     ):
     nwb_file_name = str(data_set._data.nwb_file)
     if qc_sweeps:
@@ -25,17 +27,27 @@ def plot_data_set(data_set,
         data_set.sweep_info = sweep_qc_features(data_set)
 
     sweep_table = data_set.filtered_sweep_table(clamp_mode=clamp_mode, stimuli=stimuli, stimuli_exclude=stimuli_exclude)
+    
+    if len(sweep_table)==0:
+        warnings.warn("No sweeps to plot")
+        return
+    
     height_ratios, width_ratios = axes_ratios(sweep_table)
 
     fig, ax = plt.subplots(len(height_ratios), 3,
-                           figsize=(15, 7),
+                           figsize=figsize,
                            gridspec_kw={'height_ratios': height_ratios, 'width_ratios': width_ratios}
                            )
+    if len(height_ratios)==1:
+        # ensure 2d array
+        ax = ax[None, :]
 
     for fig_row, (stimulus_code, sweep_set_table) in enumerate(sweep_table.groupby("stimulus_code")):
         sweep_set_table = sweep_set_table.copy().sort_values("sweep_number", ascending=False)
         sweep_numbers = sweep_set_table["sweep_number"]
         ss = data_set.sweep_set(sweep_numbers)
+        if qc_sweeps:
+            ss.select_epoch('experiment')
         annot = sweep_numbers.astype(str)
         if show_amps:
             annot += sweep_set_table['stimulus_amplitude'].apply(": {:.3g} pA".format)
@@ -83,6 +95,8 @@ def plot_waveforms(ax, ys, rs, annotations=None):
     offset = 0
     dy = 0
     for i, (y, r) in enumerate(zip(ys, rs)):
+        if len(y)==0:
+            continue
         y -= y[0]
         dy = max(dy, get_vertical_offset(y))
         offset += dy
@@ -94,7 +108,7 @@ def plot_waveforms(ax, ys, rs, annotations=None):
             ax.text(x[0] - 0.01 * (x[-1] - x[0]), y[0], annotations.iloc[i], fontsize=8, ha='right')
     # need to set limits to show all sweeps
     # mode would be best but mean will do fine
-    ax.set_xlim(0, np.mean([len(y) for y in ys])/r)
+    ax.set_xlim(0, np.max([len(y) for y in ys])/r)
 
     customize_axis(ax)
 
