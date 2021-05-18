@@ -28,36 +28,29 @@ hero_sweep_features = [
 rheo_sweep_features = [
     'latency',
     'avg_rate',
+    'mean_isi',
 ]
 mean_sweep_features = [
     'adapt',
     "isi_cv",
 ]
-ss_spike_features = [
+base_spike_features = [
     'upstroke_downstroke_ratio',
     'threshold_v',
     'peak_v',
     'fast_trough_v',
-]
-ramp_spike_features = [
-    'upstroke_downstroke_ratio',
-    'threshold_v',
-    'peak_v',
-    'fast_trough_v',
-    'trough_v',
-    'threshold_i',
-]
-ls_spike_features = [
-    'upstroke_downstroke_ratio',
-    'threshold_v',
-    'peak_v',
-    # include all troughs?
-    'fast_trough_v',
-    'trough_v',
     # not in cell record
     'width',
     'upstroke',
     'downstroke',
+]
+
+ramp_spike_features = base_spike_features + [
+    'trough_v',
+    'threshold_i',
+]
+ls_spike_features = base_spike_features + [
+    'trough_v',
 ]
 rheo_last_spike_features = [
     'fast_trough_v',
@@ -138,16 +131,18 @@ def extract_sweep_qc_info(output_json, **kwargs):
         
 def extract_fx_output(cell_features):
     record = {}
-
+    
     ramps = cell_features.get('ramps')
     if ramps is not None:
-        mean_spike_0 = ramps["mean_spike_0"]
-        add_features_to_record(ramp_spike_features, mean_spike_0, record, suffix="_ramp")
+        sweeps = ramps.get("spiking_sweeps", [])
+        mean_spike_0 = get_mean_first_spike_features(sweeps, ramp_spike_features)
+        add_features_to_record('all', mean_spike_0, record, suffix="_ramp")
 
     short_squares = cell_features.get('short_squares')
     if short_squares is not None:
-        mean_spike_0 = short_squares["mean_spike_0"]
-        add_features_to_record(ss_spike_features, mean_spike_0, record, suffix="_short_square")
+        sweeps = short_squares.get("common_amp_sweeps", [])
+        mean_spike_0 = get_mean_first_spike_features(sweeps, base_spike_features)
+        add_features_to_record('all', mean_spike_0, record, suffix="_short_square")
 
     chirps = cell_features.get('chirps')
     if chirps is not None:
@@ -163,6 +158,17 @@ def extract_fx_output(cell_features):
     
     return record
 
+def get_mean_first_spike_features(sweeps, features_list):
+    record = {}
+    spikes_sets = [sweep["spikes"] for sweep in sweeps]
+    for feat in features_list:
+        values = [ spikes[0][feat] for spikes in spikes_sets 
+               if len(spikes) > 0 and spikes[0][feat] is not None]
+        record[feat] = np.nanmean(values) if len(values) > 0 else np.nan
+    offset_feature_values(spike_threshold_shift_features, record, "threshold_v")
+    return record
+    
+    
 def get_complete_long_square_features(long_squares_analysis):
     record = {}
     # include all scalar features
@@ -179,6 +185,8 @@ def get_complete_long_square_features(long_squares_analysis):
         sweep = long_squares_analysis.get('hero_sweep',{})
         add_features_to_record(hero_sweep_features, sweep, record, suffix='_hero')
         add_features_to_record(ls_spike_features, sweep["spikes"][0], record, suffix="_hero")
+        ahp_features = get_ahp_delay_ratio(sweep)
+        add_features_to_record('all', ahp_features, record, suffix="_hero")
 
     if 'subthreshold_sweeps' in long_squares_analysis:
         sweeps = long_squares_analysis.get('subthreshold_sweeps',{})
@@ -190,6 +198,8 @@ def get_complete_long_square_features(long_squares_analysis):
     if 'spiking_sweeps' in long_squares_analysis:
         sweeps = long_squares_analysis.get('spiking_sweeps',{})
         sweep_features_df = pd.DataFrame.from_records(sweeps)
+        mean_df = sweep_features_df[mean_sweep_features].mean()
+        add_features_to_record(mean_sweep_features, mean_df, record, suffix="_mean")
 
         # sweep = sweep_features_df.sort_values("stim_amp", ascending=False).iloc[0]
         # add_features_to_record(hero_sweep_features, sweep, record, suffix='_hero2')
@@ -198,11 +208,10 @@ def get_complete_long_square_features(long_squares_analysis):
         n_adapt = 4
         spike_sets = [sweep["spikes"] for sweep in sweeps]
         adapt_sweep = find_spiking_sweep_by_min_spikes(sweep_features_df, spike_sets, min_spikes=n_adapt+1)
-        adapt_features = get_spike_adapt_ratio_features(spike_adapt_features, adapt_sweep.get("spikes", []), nth_spike=n_adapt)
+        adapt_features = get_spike_adapt_ratio_features(spike_adapt_features, adapt_sweep, nth_spike=n_adapt)
         record.update(adapt_features)
-
-        mean_df = sweep_features_df[mean_sweep_features].mean()
-        add_features_to_record(mean_sweep_features, mean_df, record, suffix="_mean")
+        ahp_features = get_ahp_delay_ratio(adapt_sweep)
+        add_features_to_record('all', ahp_features, record, suffix="_5spike")
     
         offset_feature_values(spike_threshold_shift_features, record, "threshold_v")
         invert_feature_values(invert_features, record)
@@ -227,9 +236,23 @@ def invert_feature_values(features, record):
             record[feature + "_inv" + suffix] = 1/val if val is not None else None
 
 def add_features_to_record(features, feature_data, record, suffix=""):
+    if features is 'all':
+        features = feature_data.keys()
     record.update({feature+suffix: feature_data.get(feature) for feature in features})
 
-def get_spike_adapt_ratio_features(features, spikes_set, nth_spike=4):
+def get_ahp_delay_ratio(sweep):
+    spikes_set = sweep.get("spikes", [])
+    if len(spikes_set) < 2:
+        value = None
+    else:
+        isi = spikes_set[-1]['peak_t'] - spikes_set[-2]['peak_t']
+        ahp = spikes_set[-2]['trough_t'] - spikes_set[-2]['peak_t']
+        value = ahp/isi
+    return {'ahp_delay_ratio': value}
+    
+
+def get_spike_adapt_ratio_features(features, sweep, nth_spike=4):
+    spikes_set = sweep.get("spikes", [])
     suffix = '_adapt_ratio'
     record = {}
     nspikes = len(spikes_set)
