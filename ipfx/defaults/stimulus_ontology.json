@@ -2,7 +2,35 @@
   [
     [
       "code",
+      "Long square",
+      "Rheobase",
+      "STEPS#0",
+      "steps",
+      "CCSteps"
+    ],
+    [
+      "name",
+      "Long Square"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Chirp",
+      "CHIRP",
+      "X8_CHIRP"
+    ],
+    [
+      "name",
+      "Chirp"
+    ]
+  ],
+  [
+    [
+      "code",
       "EXTPGGAEND",
+      "extpggaend",
+      "EXTP5_GGAEND",
       "EXTPGGAEND141203"
     ],
     [
@@ -27,6 +55,8 @@
     ],
     [
       "code",
+      "extpexpend",
+      "EXTP4_EXPEND",
       "EXTPEXPEND",
       "EXTPEXPEND141203"
     ]
@@ -115,7 +145,12 @@
     [
       "code",
       "EXTPCllATT",
-      "EXTPCllATT141203"
+      "EXTPCLATT",
+      "extpcllatt",
+      "extpciiatt",
+      "EXTPCllATT141203",
+      "EXTP2CllATT",
+      "EXTP2_CllATT"
     ],
     [
       "name",
@@ -228,8 +263,11 @@
   [
     [
       "code",
+      "extpinbath",
       "EXTPINBATH",
-      "EXTPINBATH141203"
+      "EXTPINBATH141203",
+      "EXTP1INBATH",
+      "EXTP1_INBATH"
     ],
     [
       "name",
@@ -239,8 +277,10 @@
   [
     [
       "code",
+      "extpbreakn",
       "EXTPBREAKN",
-      "EXTPBREAKN141203"
+      "EXTPBREAKN141203",
+      "EXTP3_BREAKN"
     ],
     [
       "name",
@@ -263,6 +303,7 @@
     [
       "code",
       "C1SSFINEST",
+      "SSFINEST",
       "C1SSFINEST150112"
     ]
   ],
@@ -603,6 +644,7 @@
     [
       "code",
       "C1SQCAPCHK",
+      "X9_C1SQCAPCHK",
       "C1SQCAPCHK141203"
     ],
     [
@@ -858,6 +900,8 @@
     [
       "code",
       "C2SSTRIPLE",
+      "TRIPLE",
+      "X6SQ_C2SSTRIPLE",
       "C2SSTRIPLE150429"
     ]
   ],
@@ -1161,6 +1205,7 @@
     ],
     [
       "code",
+      "C1NSD1",
       "C1NSD1SHORT17110"
     ],
     [
@@ -1171,6 +1216,8 @@
   [
     [
       "code",
+      "C1NSD2",
+      "C1NSD2SHORT",
       "C1NSD2SHORT17110"
     ],
     [
@@ -1306,7 +1353,9 @@
     ],
     [
       "code",
-      "X7Ramp"
+      "X7Ramp",
+      "RAMP",
+      "ramp"
     ]
   ],
   [
@@ -1826,7 +1875,8 @@
     ],
     [
       "code",
-      "C2NSD1SHORT17110"
+      "C2NSD1SHORT17110",
+      "X4PT_C2NSD1SHORT"
     ],
     [
       "name",
@@ -1846,6 +1896,8 @@
     ],
     [
       "code",
+      "C2NSD2SHORT",
+      "X4PU_C2NSD2SHORT",
       "C2NSD2SHORT17110"
     ]
   ],
