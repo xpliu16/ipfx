@@ -1,6 +1,5 @@
 import numpy as np
 import ipfx.time_series_utils as tsu
-import logging
 
 
 # global constants
@@ -187,15 +186,7 @@ def get_experiment_epoch(i, hz, test_pulse=True):
         expt_start_idx = stim_start_idx - int(PRESTIM_STABILITY_EPOCH * hz)
         expt_end_idx = stim_end_idx + int(POSTSTIM_STABILITY_EPOCH * hz)
 
-        if expt_start_idx < 0:
-            expt_start_idx = 0
-            logging.debug('Sweep is incomplete; truncating experiment epoch.')
-        idx_max = len(i)-1
-        if expt_end_idx > idx_max:
-            expt_end_idx = idx_max
-            logging.debug('Sweep is incomplete; truncating experiment epoch.')
-
-        return expt_start_idx, expt_end_idx
+        return expt_start_idx,expt_end_idx
     else:
         return None
 
