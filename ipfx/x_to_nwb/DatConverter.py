@@ -60,6 +60,9 @@ class DatConverter:
             return [[x] for x in pul]
 
         for elem in generateList(multipleGroupsPerFile, self.bundle.pul):
+            group_name = elem[0].Label
+            if group_name is None or group_name=='' or group_name.startswith('E-'):
+                continue
 
             nwbFile = self._createFile()
 
@@ -80,7 +83,7 @@ class DatConverter:
                 outFileFmt = outFile
             else:
                 name, suffix = os.path.splitext(outFile)
-                outFileFmt = f"{name}-{elem[0].GroupCount}{suffix}"
+                outFileFmt = f"{group_name}{suffix}"
 
             with NWBHDF5IO(outFileFmt, "w") as io:
                 io.write(nwbFile, cache_spec=True)
@@ -321,7 +324,11 @@ class DatConverter:
         if bundle.amp:
             seriesIndex = series.AmplStateSeries - 1
             stateIndex = trace.AmplIndex - 1
-            ampState = bundle.amp[seriesIndex][stateIndex].AmplifierState
+            # use AmplifierSeriesRecord.SeriesCount as index?
+            try:
+                ampState = bundle.amp[seriesIndex][stateIndex].AmplifierState
+            except IndexError:
+                return None
 
             if DatConverter._isValidAmplifierState(ampState):
                 return ampState
@@ -644,6 +651,9 @@ class DatConverter:
                                 bridge_balance = 1.0 / ampState.GSeries
                             else:
                                 bridge_balance = np.nan
+                                
+                            if ampState and ampState.RsOn:
+                                bridge_balance = ampState.RsFraction * ampState.RsValue
 
                             acquistion_data = seriesClass(name=name,
                                                           data=data,
