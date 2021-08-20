@@ -292,6 +292,7 @@ def check_stimset_reconstruction(nwbfile, outfile):
 
     The NWB file must have data acquired on two headstages/electrodes where the
     second just reads back the stimulus set.
+    This is typically the case in NWBs converted from pCLAMP .abf files.
     '''
 
     plt.rcParams['axes.grid'] = True
@@ -434,10 +435,12 @@ def main():
                         "the stimset reconstruction.", action="store_true")
     parser.add_argument("nwbfiles", help="Path to input NWB files.", type=str,
                         nargs="+")
+    parser.add_argument("--output_dir", type=str, help="outputs will be written here", default='.')
     args = parser.parse_args()
 
     for nwbfile in args.nwbfiles:
-        outfile = os.path.splitext(nwbfile)[0] + ".pdf"
+        outfile = os.path.join(args.output_dir, 
+                               os.path.splitext(os.path.basename(nwbfile))[0] + ".pdf")
         print(f"Creating PDF for {nwbfile}")
 
         if args.check_stimset_rec:
