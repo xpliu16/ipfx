@@ -146,8 +146,7 @@ def extract_fx_output(cell_features):
 
     chirps = cell_features.get('chirps')
     if chirps is not None:
-        features = [feat for feat, val in chirps.items() if np.isscalar(val)]
-        add_features_to_record(features, chirps, record, suffix="_chirp")
+        add_features_to_record('all', chirps, record, suffix="_chirp")
 
     offset_feature_values(spike_threshold_shift_features, record, "threshold_v")
     invert_feature_values(invert_features, record)
