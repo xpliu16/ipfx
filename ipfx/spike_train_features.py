@@ -21,7 +21,10 @@ def basic_spike_train_features(t, spikes_df, start, end, exclude_clipped=False):
         warnings.filterwarnings("ignore", category=RuntimeWarning, module="numpy")
 
         features = {
-            "adapt": adaptation_index(isis),
+            # decreasing isi variation
+            "adapt": norm_diff(isis),
+            # ~ net isi variation
+            "isi_norm_sq_var": norm_sq_diff(isis),
             "latency": latency(t, thresholds, start),
             "isi_cv": (isis.std() / isis.mean()) if len(isis) >= 1 else np.nan,
             "mean_isi": isis.mean() if len(isis) > 0 else np.nan,

@@ -24,6 +24,7 @@ hero_sweep_features = [
     'mean_isi',
     "median_isi",
     "isi_cv",
+    "isi_norm_sq_var",
 ]
 rheo_sweep_features = [
     'latency',
@@ -33,6 +34,7 @@ rheo_sweep_features = [
 mean_sweep_features = [
     'adapt',
     "isi_cv",
+    "isi_norm_sq_var",
 ]
 base_spike_features = [
     'upstroke_downstroke_ratio',
@@ -41,6 +43,7 @@ base_spike_features = [
     'fast_trough_v',
     # not in cell record
     'width',
+    'width_suprathresh',
     'upstroke',
     'downstroke',
 ]
@@ -199,6 +202,8 @@ def get_complete_long_square_features(long_squares_analysis):
         sweep_features_df = pd.DataFrame.from_records(sweeps)
         mean_df = sweep_features_df[mean_sweep_features].mean()
         add_features_to_record(mean_sweep_features, mean_df, record, suffix="_mean")
+        max_df = sweep_features_df[mean_sweep_features].max()
+        add_features_to_record(mean_sweep_features, max_df, record, suffix="_max")
 
         # sweep = sweep_features_df.sort_values("stim_amp", ascending=False).iloc[0]
         # add_features_to_record(hero_sweep_features, sweep, record, suffix='_hero2')
