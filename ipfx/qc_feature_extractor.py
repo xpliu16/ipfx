@@ -155,7 +155,7 @@ def extract_input_and_access_resistance(data_set, tags, manual_values={}):
 
 
     try:
-        breakin_sweep_number = data_set.get_sweep_numbers(ontology.breakin_names,"VoltageClamp")[-1]
+        breakin_sweep_number = data_set.get_sweep_numbers(ontology.breakin_names, "VoltageClamp")[-1]
         breakin_data = data_set.sweep(breakin_sweep_number)
     except IndexError as e:
         tags.append("Breakin sweep not found")
@@ -313,6 +313,9 @@ def check_sweep_integrity(sweep, is_ramp):
         if sweep.epochs["recording"] and sweep.epochs["experiment"]:
             if sweep.epochs["recording"][1] < sweep.epochs["experiment"][1]:
                 tags.append("Recording stopped before completing the experiment epoch")
+
+    if np.isnan(sweep.i).any():
+        tags.append("Stimulus contains NaN values")
 
     return tags
 
