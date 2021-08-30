@@ -41,6 +41,7 @@ base_spike_features = [
     'fast_trough_v',
     # not in cell record
     'width',
+    'width_suprathresh',
     'upstroke',
     'downstroke',
 ]

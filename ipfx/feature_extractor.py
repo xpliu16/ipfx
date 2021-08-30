@@ -121,7 +121,7 @@ class SpikeFeatureExtractor(object):
                                                             adp_thresh=0,
                                                             adp_max_delta_t=0.030)
 
-        widths = spkf.find_widths(v, t, thresholds, peaks, trough_details[1], clipped)
+        widths, widths_thresh = spkf.find_widths(v, t, thresholds, peaks, trough_details[1], clipped)
 
 
         # Points where we care about t, v, and i if available
@@ -193,6 +193,7 @@ class SpikeFeatureExtractor(object):
                     spikes_df.loc[valid_ind, k + "_i"] = i[vals]
 
         spikes_df["width"] = widths
+        spikes_df["width_suprathresh"] = widths_thresh
 
         spikes_df["upstroke_downstroke_ratio"] = spikes_df["upstroke"] / -spikes_df["downstroke"]
 

@@ -45,6 +45,9 @@ def find_widths(v, t, spike_indexes, peak_indexes, trough_indexes, clipped=None)
     """Find widths at half-height for spikes.
 
     Widths are only returned when heights are defined
+    Returns two different width calculations:
+    measured at half-height between trough and peak,
+    and between threshold and peak.
 
     Parameters
     ----------
@@ -57,6 +60,7 @@ def find_widths(v, t, spike_indexes, peak_indexes, trough_indexes, clipped=None)
     Returns
     -------
     widths : numpy array of spike widths in sec
+    widths_thresh : numpy array of spike widths in sec
     """
 
     if not spike_indexes.size or not peak_indexes.size:
@@ -87,6 +91,12 @@ def find_widths(v, t, spike_indexes, peak_indexes, trough_indexes, clipped=None)
     # definition for width (v level would fall below threshold)
         width_levels[width_levels < v[spike_indexes]] = thresh_to_peak_levels[width_levels < v[spike_indexes]]
 
+    widths = _widths_from_levels(width_levels, v, t, spike_indexes, peak_indexes, trough_indexes, use_indexes)
+    widths_thresh = _widths_from_levels(thresh_to_peak_levels, v, t, spike_indexes, peak_indexes, trough_indexes, ~clipped)
+    return widths, widths_thresh
+
+
+def _widths_from_levels(width_levels, v, t, spike_indexes, peak_indexes, trough_indexes, use_indexes):
     width_starts = np.zeros_like(trough_indexes) * np.nan
     width_starts[use_indexes] = np.array([pk - np.flatnonzero(v[pk:spk:-1] <= wl)[0] if
                     np.flatnonzero(v[pk:spk:-1] <= wl).size > 0 else np.nan for pk, spk, wl
