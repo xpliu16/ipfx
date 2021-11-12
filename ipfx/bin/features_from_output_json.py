@@ -194,8 +194,8 @@ def get_complete_long_square_features(long_squares_analysis):
         sweep_features_df = pd.DataFrame.from_records(sweeps)
         sweep = sweep_features_df.sort_values("stim_amp", ascending=False).iloc[0]
         if sweep["stim_amp"] > 0:
-            add_features_to_record(['sag', 'sag_peak_t'], sweep, record, suffix='_depol')
-        
+            add_features_to_record(['sag', 'sag_peak_t', 'sag_area'], sweep, record, suffix='_depol')
+
     if 'spiking_sweeps' in long_squares_analysis:
         sweeps = long_squares_analysis.get('spiking_sweeps',{})
         sweep_features_df = pd.DataFrame.from_records(sweeps)

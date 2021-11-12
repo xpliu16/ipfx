@@ -195,6 +195,8 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         features["sag"] = subthreshold_sweep_features["sag"].values[closest_index]
         features["sag_peak_t"] = subthreshold_sweep_features["sag_peak_t"].values[closest_index]
+        features["sag_area"] = subthreshold_sweep_features["sag_area"].values[closest_index]
+        features["sag_tau"] = subthreshold_sweep_features["sag_tau"].values[closest_index]
         features["vm_for_sag"] = sag_eval_levels[closest_index]
         features["subthreshold_sweeps"] = subthreshold_sweep_features
 

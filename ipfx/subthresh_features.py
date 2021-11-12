@@ -144,7 +144,7 @@ def steady_state_voltage(t, v, start, end, interval=0.03):
     Returns
     -------
     v_ss : average voltage during end of stimulus interval
-    """    
+    """
     v_ss = tsu.average_voltage(v, t, start=end - interval, end=end)
     return v_ss
 
@@ -160,6 +160,9 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     Returns
     -------
     sag : fraction that membrane potential relaxes back to baseline
+    peak_time : time of peak response (sec from stimulus onset)
+    sag_area : integrated area of sag peak
+    sag_tau : time constant of decay after sag peak
     """
     v_peak, peak_index = voltage_deflection(t, v, i, start, end, deflect_type=None)
     v_peak_avg = tsu.average_voltage(v, t, start=t[peak_index] - peak_width / 2.,
@@ -167,9 +170,23 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
     v_steady = steady_state_voltage(t, v, start, end, interval=baseline_interval)
     sag = (v_peak_avg - v_steady) / (v_peak_avg - v_baseline)
-    t_peak = t[peak_index] - start
+    peak_time = t[peak_index] - start
 
-    return sag, t_peak
+    sign = np.sign(v_peak - v_baseline)
+    if sign*(v_peak - v_steady) > 4:
+        v_sag = sign*(v - v_steady)
+        sag_area = np.sum(v_sag[v_sag > 0]) * (t[1] - t[0])
+
+        v0 = v_peak - 0.25*(v_peak - v_steady)
+        v1 = v_peak - 0.95*(v_peak - v_steady)
+        t0 = t[(sign*v > sign*v0)][-1]
+        t1 = t[(t > t[peak_index]) & (sign*v < sign*v1)][0]
+        a, inv_tau, y0 = fit_membrane_time_constant(t, v, t0, t1)
+        sag_tau = 1 / inv_tau
+    else:
+        sag_area, sag_tau = 0, np.nan
+
+    return sag, peak_time, sag_area, sag_tau
 
 
 def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):

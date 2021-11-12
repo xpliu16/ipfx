@@ -275,20 +275,12 @@ class SpikeTrainFeatureExtractor(object):
         if extra_features is None:
             extra_features = []
 
-        if 'peak_deflect' in extra_features:
-            features['peak_deflect'] = subf.voltage_deflection(t, v, i, self.start, self.end, self.deflect_type)
 
         if 'stim_amp' in extra_features:
             features['stim_amp'] = self.stim_amp_fn(t, i, self.start) if self.stim_amp_fn else None
 
         if 'v_baseline' in extra_features:
             features['v_baseline'] = subf.baseline_voltage(t, v, self.start, self.baseline_interval, self.filter_frequency)
-
-        if 'v_ss' in extra_features:
-            features['v_ss'] = subf.steady_state_voltage(t, v, self.start, self.end, self.baseline_interval)
-
-        if 'sag' in extra_features:
-            features['sag'], features['sag_peak_t'] = subf.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
 
         if features["avg_rate"] > 0:
             if 'pause' in extra_features:
@@ -297,7 +289,15 @@ class SpikeTrainFeatureExtractor(object):
                 features['burst'] = strf.burst(t, spikes_df, self.burst_tol, self.pause_cost)
             if 'delay' in extra_features:
                 features['delay'] = strf.delay(t, v, spikes_df, self.start, self.end)
-
+        else:
+            if 'peak_deflect' in extra_features:
+                features['peak_deflect'] = subf.voltage_deflection(t, v, i, self.start, self.end, self.deflect_type)
+            if 'v_ss' in extra_features:
+                features['v_ss'] = subf.steady_state_voltage(t, v, self.start, self.end, self.baseline_interval)
+            if 'sag' in extra_features:
+                features['sag'], features['sag_peak_t'], features['sag_area'], features['sag_tau'] = (
+                    subf.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
+                )
         return features
 
 
