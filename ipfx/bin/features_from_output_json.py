@@ -44,6 +44,7 @@ base_spike_features = [
     'width_suprathresh',
     'upstroke',
     'downstroke',
+    'postap_slope'
 ]
 
 ramp_spike_features = base_spike_features + [

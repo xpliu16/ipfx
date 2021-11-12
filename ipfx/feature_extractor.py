@@ -131,8 +131,10 @@ class SpikeFeatureExtractor(object):
             "trough": troughs,
         }
 
+        post_ap_di = int(0.5e-3 / (t[1] - t[0]))
         # Points where we care about t and dv/dt
         dvdt_data_indexes = {
+            "postap_slope": trough_details[1] + post_ap_di,
             "upstroke": upstrokes,
             "downstroke": downstrokes
         }
