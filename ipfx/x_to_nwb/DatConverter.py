@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 class DatConverter:
 
-    def __init__(self, inFile, outFile, multipleGroupsPerFile=False, compression=True):
+    def __init__(self, inFile, outFile, multipleGroupsPerFile=False, compression=True, overwrite=False):
         """
         Convert DAT files, created by PatchMaster, to NWB v2 files.
 
@@ -64,6 +64,17 @@ class DatConverter:
             if group_name is None or group_name=='' or group_name.startswith('E-'):
                 continue
 
+            if multipleGroupsPerFile:
+                outFileFmt = outFile
+            else:
+                folder = os.path.dirname(outFile)
+                outFileFmt = os.path.join(folder, f"{group_name}.nwb")
+                if os.path.exists(outFileFmt):
+                    if overwrite:
+                        os.remove(outFileFmt)
+                    else:
+                        log.warning(f"The output file {outFileFmt} exists, skipping conversion.")
+
             nwbFile = self._createFile()
 
             device = self._createDevice()
@@ -79,11 +90,6 @@ class DatConverter:
             for i in self._createStimulusSeries(electrodes, elem):
                 nwbFile.add_stimulus(i)
 
-            if multipleGroupsPerFile:
-                outFileFmt = outFile
-            else:
-                name, suffix = os.path.splitext(outFile)
-                outFileFmt = f"{group_name}{suffix}"
 
             with NWBHDF5IO(outFileFmt, "w") as io:
                 io.write(nwbFile, cache_spec=True)
@@ -493,7 +499,7 @@ class DatConverter:
                         stimset = generator.fetch(sweep, trace)
 
                         if not len(stimset):
-                            print(f"Can not yet recreate stimset {series.Label}")
+                            log.warning(f"Can not yet recreate stimset {series.Label}")
                             continue
 
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
@@ -651,7 +657,7 @@ class DatConverter:
                                 bridge_balance = 1.0 / ampState.GSeries
                             else:
                                 bridge_balance = np.nan
-                                
+
                             if ampState and ampState.RsOn:
                                 bridge_balance = ampState.RsFraction * ampState.RsValue
 

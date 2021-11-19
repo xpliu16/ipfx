@@ -3,7 +3,8 @@ import numpy as np
 from ipfx.x_to_nwb.hr_segments import getSegmentClass
 from ipfx.x_to_nwb.conversion_utils import getChannelRecordIndex, getStimulusRecordIndex
 
-
+import logging
+log = logging.getLogger(__name__)
 class StimSetGenerator:
     """
     High level class for creating stimsets
@@ -72,7 +73,7 @@ class StimSetGenerator:
             self.cache[key] = allSweeps
 
         except (ValueError, IndexError) as e:
-            print(e)
+            log.warning(e)
             if key:
                 self.cache[key] = False
             return []

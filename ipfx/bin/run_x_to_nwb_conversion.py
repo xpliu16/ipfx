@@ -11,7 +11,9 @@ from ipfx.x_to_nwb.DatConverter import DatConverter
 log = logging.getLogger(__name__)
 
 
-def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False, outputFeedbackChannel=False, multipleGroupsPerFile=False, compression=True):
+def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False,
+            outputFeedbackChannel=False, multipleGroupsPerFile=False, compression=True,
+            outputFolder=None):
     """
     Convert the given file to a NeuroDataWithoutBorders file using pynwb
 
@@ -36,6 +38,7 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
 
     if os.path.isfile(inFileOrFolder):
         root, ext = os.path.splitext(inFileOrFolder)
+        folder, root = os.path.split(root)
     if os.path.isdir(inFileOrFolder):
         if not fileType:
             raise ValueError("Missing fileType when passing a folder")
@@ -46,8 +49,9 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
         ext = fileType
         root = os.path.join(inFileOrFolder, "..",
                             os.path.basename(inFileOrFolder))
-
-    outFile = root + ".nwb"
+        folder, root = os.path.split(root)
+    folder = outputFolder or folder
+    outFile = os.path.join(folder, root + ".nwb")
 
     if not outputMetadata and os.path.exists(outFile):
         if overwrite:
@@ -90,6 +94,7 @@ def main():
     common_group.add_argument("--outputMetadata", action="store_true", default=False,
                                help="Helper for debugging which outputs HTML/TXT files with the metadata contents of the files.")
     common_group.add_argument("--log", type=str, help="Log level for debugging, defaults to the root logger's value.")
+    common_group.add_argument("--outputFolder", type=str, default=None, help="Folder to save outputs, defaults to input folder.")
     common_group.add_argument("filesOrFolders", nargs="+",
                                help="List of ABF files/folders to convert.")
 
@@ -126,13 +131,14 @@ def main():
         ABFConverter.adcNamesWithRealData.append(args.realDataChannel)
 
     for fileOrFolder in args.filesOrFolders:
-        print(f"Converting {fileOrFolder}")
+        log.info(f"Converting {fileOrFolder}")
         convert(fileOrFolder,
                 overwrite=args.overwrite,
                 fileType=args.fileType,
                 outputMetadata=args.outputMetadata,
                 outputFeedbackChannel=args.outputFeedbackChannel,
                 multipleGroupsPerFile=args.multipleGroupsPerFile,
+                outputFolder=args.outputFolder,
                 compression=args.compression)
 
 
