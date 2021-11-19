@@ -58,7 +58,7 @@ ls_spike_features = base_spike_features + [
 ]
 rheo_last_spike_features = [
     'fast_trough_v',
-    'adp_v',    
+    'adp_v',
 ]
 spike_adapt_features = [
     'isi',
@@ -82,7 +82,7 @@ def extract_pipeline_output(output_json, save_qc_info=False):
         cell_qc_features = output.get("sweep_extraction", {}).get("cell_features")
         if cell_qc_features is not None:
             record.update({key+"_qc": val for key, val in cell_qc_features.items()})
-            
+
         qc_state = output.get('qc', {}).get('cell_state')
         if qc_state is not None:
             record['fail_tags_qc'] = '; '.join(qc_state.pop('fail_tags'))
@@ -92,7 +92,7 @@ def extract_pipeline_output(output_json, save_qc_info=False):
         # if fx_state is not None:
         #     record['failed_fx'] = fx_state.get('failed_fx', False)
         #     record['fail_message_fx'] = fx_state.get('fail_fx_message')
-        
+
         fx_state = fx_output.get('feature_states', {})
         for key, module_state in fx_state.items():
             name = key.replace('_state','')
@@ -121,7 +121,7 @@ def extract_sweep_qc_info(output_json, **kwargs):
     sweep_features = output.get('sweep_extraction', {}).get('sweep_features')
     if sweep_features is not None and len(sweep_features):
         sweep_df = pd.DataFrame.from_records(sweep_features).set_index('sweep_number')
-        
+
         long_squares = (output.get('feature_extraction', {})
                         .get('cell_features', {})
                         .get('long_squares', {}))
@@ -132,10 +132,10 @@ def extract_sweep_qc_info(output_json, **kwargs):
                     sweep = sweep_df.loc[number]
                     add_features_to_record(sweep_qc_info, sweep, record, suffix='_'+name)
     return record
-        
+
 def extract_fx_output(cell_features):
     record = {}
-    
+
     ramps = cell_features.get('ramps')
     if ramps is not None:
         sweeps = ramps.get("spiking_sweeps", [])
@@ -158,20 +158,20 @@ def extract_fx_output(cell_features):
     long_squares_analysis = cell_features.get('long_squares')
     if long_squares_analysis is not None:
         record.update(get_complete_long_square_features(long_squares_analysis))
-    
+
     return record
 
 def get_mean_first_spike_features(sweeps, features_list):
     record = {}
     spikes_sets = [sweep["spikes"] for sweep in sweeps]
     for feat in features_list:
-        values = [ spikes[0][feat] for spikes in spikes_sets 
+        values = [ spikes[0][feat] for spikes in spikes_sets
                if len(spikes) > 0 and spikes[0][feat] is not None]
         record[feat] = np.nanmean(values) if len(values) > 0 else np.nan
     offset_feature_values(spike_threshold_shift_features, record, "threshold_v")
     return record
-    
-    
+
+
 def get_complete_long_square_features(long_squares_analysis):
     record = {}
     # include all scalar features
@@ -217,20 +217,24 @@ def get_complete_long_square_features(long_squares_analysis):
         record.update(adapt_features)
         ahp_features = get_ahp_delay_ratio(adapt_sweep)
         add_features_to_record('all', ahp_features, record, suffix="_5spike")
-    
+
+        offset_feature_values(["trough_v"], record, "fast_trough_v", add_suffix="_slowdeltav", replace=False)
         offset_feature_values(spike_threshold_shift_features, record, "threshold_v")
         invert_feature_values(invert_features, record)
     return record
 
-def offset_feature_values(features, record, relative_to):
+def offset_feature_values(features, record, relative_to, add_suffix="_deltav", replace=True):
     for feature in features:
-        matches = [x for x in record if x.startswith(feature) 
+        matches = [x for x in record if x.startswith(feature)
                    and not 'adapt_ratio' in x and not 'last' in x]
         for match in matches:
             suffix = match[len(feature):]
-            val = record.pop(match)
-            feature_short = feature[:-2] #drop the "_v"
-            record[feature_short + "_deltav" + suffix] = (val - record[relative_to+suffix]) if val is not None else None
+            if relative_to+suffix in record:
+                val = record[match]
+                if replace:
+                    record.pop(match)
+                feature_short = feature.replace("_v", "")
+                record[feature_short + add_suffix + suffix] = (val - record[relative_to+suffix]) if val is not None else None
 
 def invert_feature_values(features, record):
     for feature in features:
@@ -254,7 +258,7 @@ def get_ahp_delay_ratio(sweep):
         ahp = spikes_set[-2]['trough_t'] - spikes_set[-2]['peak_t']
         value = ahp/isi
     return {'ahp_delay_ratio': value}
-    
+
 
 def get_spike_adapt_ratio_features(features, sweep, nth_spike=4):
     spikes_set = sweep.get("spikes", [])
@@ -311,4 +315,3 @@ def process_file_list(files, cell_ids=None, output=None, save_qc_info=False,
 if __name__ == "__main__":
     main()
 
-    
