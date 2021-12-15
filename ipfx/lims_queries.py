@@ -6,7 +6,7 @@ from pathlib import Path
 from allensdk.core.authentication import credential_injector
 from allensdk.core.auth_config import LIMS_DB_CREDENTIAL_MAP
 
-from ipfx.py2to3 import to_str
+from ipfx.string_utils import to_str
 
 
 TIMEOUT = os.environ.get(
