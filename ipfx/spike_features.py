@@ -397,11 +397,11 @@ def estimate_adjusted_detection_parameters(v_set, t_set, interval_start, interva
         upstrokes = spkd.find_upstroke_indexes(v, t, putative_spikes, peaks, dvdt=dv)
         if upstrokes.size:
             all_upstrokes = np.append(all_upstrokes, dv[upstrokes])
-    
+
     if len(all_upstrokes) > 0:
         new_thresh_frac = min_thresh / all_upstrokes.mean()
     else:
-        new_thresh_frac = np.nan()
+        new_thresh_frac = np.nan
 
     return new_dv_cutoff, new_thresh_frac
 
