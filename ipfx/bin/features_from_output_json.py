@@ -30,6 +30,7 @@ rheo_sweep_features = [
     'latency',
     'avg_rate',
     'mean_isi',
+    'first_isi',
 ]
 mean_sweep_features = [
     'adapt',
@@ -212,6 +213,7 @@ def get_complete_long_square_features(long_squares_analysis):
 
         n_adapt = 4
         spike_sets = [sweep["spikes"] for sweep in sweeps]
+        # looking for one more spike than necessary here
         adapt_sweep = find_spiking_sweep_by_min_spikes(sweep_features_df, spike_sets, min_spikes=n_adapt+1)
         adapt_features = get_spike_adapt_ratio_features(spike_adapt_features, adapt_sweep, nth_spike=n_adapt)
         record.update(adapt_features)
@@ -278,8 +280,19 @@ def get_spike_adapt_ratio_features(features, sweep, nth_spike=4):
         record.update({feature+suffix: value})
     return record
 
-    specimen_ids = get_specimen_ids(ids, input_file, project, include_failed_cells, cell_count_limit)
-    compile_lims_results(specimen_ids).to_csv(output_file)
+
+def get_spikes_df(sweep_record, add_isi=True):
+    df = pd.DataFrame.from_records(sweep_record['spikes'])
+    if add_isi:
+        df['isi'] = df['peak_t'].diff().shift(-1)
+    return df
+
+def get_spike_var_ratio_features(features, sweep):
+    suffix='_var_ratio'
+    spikes = get_spikes_df(sweep, add_isi='isi' in features)
+    record = {feature+suffix: spikes[feature].max()/spikes[feature].min()
+              for feature in features}
+    return record
 
 def find_spiking_sweep_by_min_spikes(spiking_features, spikes_set, min_spikes=5):
     num_spikes = np.array([len(spikes) for spikes in spikes_set])
