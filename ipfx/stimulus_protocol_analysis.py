@@ -120,7 +120,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
     SAG_TARGET = -100.
     HERO_MIN_AMP_OFFSET = 39.0
     HERO_MAX_AMP_OFFSET = 61.0
-    
+
     extra_sweep_feature_names = [
         'peak_deflect',
         'stim_amp',
@@ -193,10 +193,9 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         sag_eval_levels = np.array([ v for v, index in subthreshold_sweep_features["peak_deflect"] ])
         closest_index = np.argmin(np.abs(sag_eval_levels - self.SAG_TARGET))
 
-        features["sag"] = subthreshold_sweep_features["sag"].values[closest_index]
-        features["sag_peak_t"] = subthreshold_sweep_features["sag_peak_t"].values[closest_index]
-        features["sag_area"] = subthreshold_sweep_features["sag_area"].values[closest_index]
-        features["sag_tau"] = subthreshold_sweep_features["sag_tau"].values[closest_index]
+        sag_features = ['sag', 'sag_peak_t', 'sag_area', 'sag_tau']
+        for feat in sag_features:
+            features[feat] = subthreshold_sweep_features[feat].values[closest_index]
         features["vm_for_sag"] = sag_eval_levels[closest_index]
         features["subthreshold_sweeps"] = subthreshold_sweep_features
 
@@ -229,7 +228,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
                                                            calc_subthresh_ss.v,
                                                            self.spx.start, self.spx.end,
                                                            self.sptx.baseline_interval)
-        
+
         features["input_resistance_ss"] = subf.input_resistance_from_iv_curve(
             calc_subthresh_features["stim_amp"],
             calc_subthresh_features["v_ss"]

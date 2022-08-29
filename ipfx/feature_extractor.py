@@ -295,7 +295,7 @@ class SpikeTrainFeatureExtractor(object):
             if 'v_ss' in extra_features:
                 features['v_ss'] = subf.steady_state_voltage(t, v, self.start, self.end, self.baseline_interval)
             if 'sag' in extra_features:
-                features['sag'], features['sag_peak_t'], features['sag_area'], features['sag_tau'] = (
+                features['sag'], features['sag_peak_t'], features['sag_area'], features['sag_tau'], features['sag_width'] = (
                     subf.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
                 )
         return features

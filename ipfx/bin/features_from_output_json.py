@@ -24,7 +24,7 @@ hero_sweep_features = [
     'mean_isi',
     "median_isi",
     "isi_cv",
-    "isi_norm_sq_var",
+    # "isi_norm_sq_var",
 ]
 rheo_sweep_features = [
     'latency',
@@ -35,27 +35,34 @@ rheo_sweep_features = [
 mean_sweep_features = [
     'adapt',
     "isi_cv",
-    "isi_norm_sq_var",
+    # "isi_norm_sq_var",
+]
+max_sweep_features = [
+    'adapt',
+    "isi_cv",
+    "avg_rate",
 ]
 base_spike_features = [
     'upstroke_downstroke_ratio',
     'threshold_v',
     'peak_v',
-    'fast_trough_v',
     # not in cell record
     'width',
-    'width_suprathresh',
     'upstroke',
     'downstroke',
-    'postap_slope'
+    'width_suprathresh',
 ]
 
 ramp_spike_features = base_spike_features + [
     'trough_v',
     'threshold_i',
+    'fast_trough_v',
+    'postap_slope'
 ]
 ls_spike_features = base_spike_features + [
     'trough_v',
+    'fast_trough_v',
+    'postap_slope'
 ]
 rheo_last_spike_features = [
     'fast_trough_v',
@@ -66,12 +73,18 @@ spike_adapt_features = [
     'width',
     'upstroke',
     'downstroke',
-    'peak_v',
     'threshold_v',
-    'fast_trough_v',
+    'peak_v',
+    # 'fast_trough_deltav',
 ]
 invert_features = ["first_isi"]
-spike_threshold_shift_features = ["trough_v", "fast_trough_v", "peak_v"]
+spike_threshold_shift_features = ["fast_trough_v", "peak_v"]
+sag_features = [
+    'sag', 
+    # 'sag_peak_t', 
+    'sag_area', 
+    'sag_tau'
+    ]
 
 
 def extract_pipeline_output(output_json, save_qc_info=False):
@@ -115,23 +128,35 @@ sweep_qc_info = [
     "slow_noise_rms_mv",
     "vm_delta_mv",
 ]
+
+def get_sweeps_df(output, features=[]):
+    sweep_features = output.get('sweep_extraction', {}).get('sweep_features')
+    assert sweep_features is not None and len(sweep_features) > 0
+    sweep_df = pd.DataFrame.from_records(sweep_features).set_index('sweep_number')
+    if len(features)>0:
+        features.append('sweep_number')
+        long_squares = (output.get('feature_extraction', {})
+                    .get('cell_features', {})
+                    .get('long_squares', {}))
+        if long_squares is not None:
+            ls_df = pd.DataFrame.from_records(long_squares['sweeps'], columns=features).set_index('sweep_number')
+            sweep_df = sweep_df.join(ls_df)
+    return sweep_df
+
 def extract_sweep_qc_info(output_json, **kwargs):
     output = ju.read(output_json)
     record = {}
+    sweep_df = get_sweeps_df(output)
 
-    sweep_features = output.get('sweep_extraction', {}).get('sweep_features')
-    if sweep_features is not None and len(sweep_features):
-        sweep_df = pd.DataFrame.from_records(sweep_features).set_index('sweep_number')
-
-        long_squares = (output.get('feature_extraction', {})
-                        .get('cell_features', {})
-                        .get('long_squares', {}))
-        if long_squares is not None:
-            for name in ['hero', 'rheobase']:
-                number = long_squares.get(f'{name}_sweep', {}).get('sweep_number')
-                if number is not None:
-                    sweep = sweep_df.loc[number]
-                    add_features_to_record(sweep_qc_info, sweep, record, suffix='_'+name)
+    long_squares = (output.get('feature_extraction', {})
+                    .get('cell_features', {})
+                    .get('long_squares', {}))
+    if long_squares is not None:
+        for name in ['hero', 'rheobase']:
+            number = long_squares.get(f'{name}_sweep', {}).get('sweep_number')
+            if number is not None:
+                sweep = sweep_df.loc[number]
+                add_features_to_record(sweep_qc_info, sweep, record, suffix='_'+name)
     return record
 
 def extract_fx_output(cell_features):
@@ -169,7 +194,7 @@ def get_mean_first_spike_features(sweeps, features_list):
         values = [ spikes[0][feat] for spikes in spikes_sets
                if len(spikes) > 0 and spikes[0][feat] is not None]
         record[feat] = np.nanmean(values) if len(values) > 0 else np.nan
-    offset_feature_values(spike_threshold_shift_features, record, "threshold_v")
+    offset_feature_values(spike_threshold_shift_features, record, "threshold_v", replace=False)
     return record
 
 
@@ -197,15 +222,15 @@ def get_complete_long_square_features(long_squares_analysis):
         sweep_features_df = pd.DataFrame.from_records(sweeps)
         sweep = sweep_features_df.sort_values("stim_amp", ascending=False).iloc[0]
         if sweep["stim_amp"] > 0:
-            add_features_to_record(['sag', 'sag_peak_t', 'sag_area'], sweep, record, suffix='_depol')
+            add_features_to_record(sag_features, sweep, record, suffix='_depol')
 
     if 'spiking_sweeps' in long_squares_analysis:
         sweeps = long_squares_analysis.get('spiking_sweeps',{})
         sweep_features_df = pd.DataFrame.from_records(sweeps)
-        mean_df = sweep_features_df[mean_sweep_features].mean()
+        mean_df = sweep_features_df[mean_sweep_features].mean(axis=0)
         add_features_to_record(mean_sweep_features, mean_df, record, suffix="_mean")
-        max_df = sweep_features_df[mean_sweep_features].max()
-        add_features_to_record(mean_sweep_features, max_df, record, suffix="_max")
+        max_df = sweep_features_df[max_sweep_features].max(axis=0)
+        add_features_to_record(max_sweep_features, max_df, record, suffix="_max")
 
         # sweep = sweep_features_df.sort_values("stim_amp", ascending=False).iloc[0]
         # add_features_to_record(hero_sweep_features, sweep, record, suffix='_hero2')
@@ -221,7 +246,7 @@ def get_complete_long_square_features(long_squares_analysis):
         add_features_to_record('all', ahp_features, record, suffix="_5spike")
 
         offset_feature_values(["trough_v"], record, "fast_trough_v", add_suffix="_slowdeltav", replace=False)
-        offset_feature_values(spike_threshold_shift_features, record, "threshold_v")
+        offset_feature_values(spike_threshold_shift_features, record, "threshold_v", replace=False)
         invert_feature_values(invert_features, record)
     return record
 
@@ -231,7 +256,7 @@ def offset_feature_values(features, record, relative_to, add_suffix="_deltav", r
                    and not 'adapt_ratio' in x and not 'last' in x]
         for match in matches:
             suffix = match[len(feature):]
-            if relative_to+suffix in record:
+            if record.get(relative_to+suffix) is not None:
                 val = record[match]
                 if replace:
                     record.pop(match)
@@ -249,7 +274,7 @@ def invert_feature_values(features, record):
 def add_features_to_record(features, feature_data, record, suffix=""):
     if features is 'all':
         features = feature_data.keys()
-    record.update({feature+suffix: feature_data.get(feature) for feature in features})
+    record.update({feature+suffix: feature_data.get(feature, np.nan) for feature in features})
 
 def get_ahp_delay_ratio(sweep):
     spikes_set = sweep.get("spikes", [])

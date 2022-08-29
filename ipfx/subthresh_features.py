@@ -163,6 +163,7 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     peak_time : time of peak response (sec from stimulus onset)
     sag_area : integrated area of sag peak
     sag_tau : time constant of decay after sag peak
+    sag_width: FWHM of sag peak
     """
     v_peak, peak_index = voltage_deflection(t, v, i, start, end, deflect_type=None)
     v_peak_avg = tsu.average_voltage(v, t, start=t[peak_index] - peak_width / 2.,
@@ -173,20 +174,28 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     peak_time = t[peak_index] - start
 
     sign = np.sign(v_peak - v_baseline)
-    if sign*(v_peak - v_steady) > 4:
+    if sign*(v_peak - v_steady) > 2:
         v_sag = sign*(v - v_steady)
         sag_area = np.sum(v_sag[v_sag > 0]) * (t[1] - t[0])
+
+        v0 = 0.5*(v_peak + v_steady)
+        t0 = t[(sign*v > sign*v0)][0]
+        t1 = t[(t > t[peak_index]) & (sign*v < sign*v0)][0]
+        sag_width = t1-t0
 
         v0 = v_peak - 0.25*(v_peak - v_steady)
         v1 = v_peak - 0.95*(v_peak - v_steady)
         t0 = t[(sign*v > sign*v0)][-1]
         t1 = t[(t > t[peak_index]) & (sign*v < sign*v1)][0]
-        a, inv_tau, y0 = fit_membrane_time_constant(t, v, t0, t1)
-        sag_tau = 1 / inv_tau
+        if t1-t0 > 0.005:
+            a, inv_tau, y0 = fit_membrane_time_constant(t, v, t0, t1)
+            sag_tau = 1 / inv_tau
+        else:
+            sag_tau = np.nan
     else:
-        sag_area, sag_tau = 0, np.nan
+        sag_area, sag_tau, sag_width = 0, np.nan, np.nan
 
-    return sag, peak_time, sag_area, sag_tau
+    return sag, peak_time, sag_area, sag_tau, sag_width
 
 
 def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):
