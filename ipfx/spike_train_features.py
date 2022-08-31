@@ -5,12 +5,13 @@ from . import spike_features as spkf
 from . import error as er
 
 
-def basic_spike_train_features(t, spikes_df, start, end, exclude_clipped=False):
+def basic_spike_train_features(t, spikes_df, start=None, end=None, exclude_clipped=False):
     features = {}
     if len(spikes_df) == 0 or spikes_df.empty:
         features["avg_rate"] = 0
         return features
-
+    if start is None:
+        start = t[0]
     thresholds = spikes_df["threshold_index"].values.astype(int)
     if exclude_clipped:
         mask = spikes_df["clipped"].values.astype(bool)
@@ -19,14 +20,16 @@ def basic_spike_train_features(t, spikes_df, start, end, exclude_clipped=False):
     with warnings.catch_warnings():
         # ignore mean of empty slice warnings here
         warnings.filterwarnings("ignore", category=RuntimeWarning, module="numpy")
-
+        spike_times = t[thresholds]
         features = {
             # decreasing isi variation
             "adapt": norm_diff(isis),
             # ~ net isi variation
             "isi_norm_sq_var": norm_sq_diff(isis),
             "latency": latency(t, thresholds, start),
-            "isi_cv": (isis.std() / isis.mean()) if len(isis) >= 1 else np.nan,
+            "isi_cv": cv(isis),
+            "isi_cv_late": cv(isis, spike_times, start=start+0.5),
+            "ir_late": irregularity_ratio(isis, spike_times, start=start+0.5),
             "mean_isi": isis.mean() if len(isis) > 0 else np.nan,
             "median_isi": np.median(isis),
             "first_isi": isis[0] if len(isis) >= 1 else np.nan,
@@ -209,6 +212,11 @@ def norm_diff(a):
         avg = np.nanmean(norm_diffs)
     return avg
 
+def cv(isis, spikes=None, start=None):
+    if start is not None:
+        window = spikes[:-1] > start
+        isis = isis[window]
+    return (isis.std() / isis.mean()) if len(isis) >= 1 else np.nan
 
 def norm_sq_diff(a):
     """Calculate average of (a[i] - a[i+1])^2 / (a[i] + a[i+1])^2."""
@@ -219,6 +227,13 @@ def norm_sq_diff(a):
     norm_sq_diffs = np.square((a[1:] - a[:-1])) / np.square((a[1:] + a[:-1]))
     return norm_sq_diffs.mean()
 
+def irregularity_ratio(isis, spikes, start=0.5):
+    window = spikes[:-1] > start
+    isis = isis[window]
+    if len(isis) < 2:
+        return np.nan
+    ir = 1 - np.minimum(isis[1:]/isis[:-1], isis[:-1]/isis[1:])
+    return np.max(ir)
 
 def detect_pauses(isis, isi_types, cost_weight=1.0):
     """Determine which ISIs are "pauses" in ongoing firing.

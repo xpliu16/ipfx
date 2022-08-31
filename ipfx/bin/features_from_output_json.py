@@ -24,7 +24,7 @@ hero_sweep_features = [
     'mean_isi',
     "median_isi",
     "isi_cv",
-    # "isi_norm_sq_var",
+    "ir_late"
 ]
 rheo_sweep_features = [
     'latency',
@@ -35,11 +35,11 @@ rheo_sweep_features = [
 mean_sweep_features = [
     'adapt',
     "isi_cv",
-    # "isi_norm_sq_var",
+    "ir_late"
 ]
 max_sweep_features = [
-    'adapt',
-    "isi_cv",
+    # 'adapt',
+    # "isi_cv",
     "avg_rate",
 ]
 base_spike_features = [
@@ -80,11 +80,20 @@ spike_adapt_features = [
 invert_features = ["first_isi"]
 spike_threshold_shift_features = ["fast_trough_v", "peak_v"]
 sag_features = [
-    'sag', 
-    # 'sag_peak_t', 
-    'sag_area', 
+    'sag',
+    # 'sag_peak_t',
+    'sag_area',
     'sag_tau'
     ]
+ls_features = sag_features + [
+    "v_baseline",
+    "rheobase_i",
+    "fi_fit_slope",
+    "vm_for_sag",
+    "input_resistance",
+    "input_resistance_ss",
+    "tau",
+]
 
 
 def extract_pipeline_output(output_json, save_qc_info=False):
@@ -201,8 +210,8 @@ def get_mean_first_spike_features(sweeps, features_list):
 def get_complete_long_square_features(long_squares_analysis):
     record = {}
     # include all scalar features
-    features = [feat for feat, val in long_squares_analysis.items() if np.isscalar(val)]
-    add_features_to_record(features, long_squares_analysis, record)
+    # features = [feat for feat, val in long_squares_analysis.items() if np.isscalar(val)]
+    add_features_to_record(ls_features, long_squares_analysis, record)
 
     if 'rheobase_sweep' in long_squares_analysis:
         sweep = long_squares_analysis.get('rheobase_sweep',{})
