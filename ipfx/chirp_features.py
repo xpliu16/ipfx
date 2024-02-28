@@ -35,7 +35,6 @@ def extract_chirp_features_by_sweep(sweepset, **params):
     if len(results)==0:
         logging.warning("No chirp sweep results available.")
         return {}
-
     mean_results = {key: np.mean([res[key] for res in results]) for key in results[0]}
     mean_results['sweeps'] = results
     return mean_results
@@ -46,10 +45,11 @@ def extract_chirp_fft(sweepset, min_freq=0.4, max_freq=40.0, **params):
     freqs = []
     for i, sweep in enumerate(sweepset.sweeps):
         try:
-            amp, phase, freq = chirp_sweep_amp_phase(sweep, min_freq=min_freq, max_freq=max_freq, **params)
-            amps.append(amp)
-            phases.append(phase)
-            freqs.append(freq)
+            if max(sweep.t) > 22.5:  # Make sure protocol didn't terminate early
+                amp, phase, freq = chirp_sweep_amp_phase(sweep, min_freq=min_freq, max_freq=max_freq, **params)
+                amps.append(amp)
+                phases.append(phase)
+                freqs.append(freq)
         except (FeatureError, ValueError) as exc:
             logging.warning(exc)
     if len(amps)==0:
@@ -70,6 +70,9 @@ def extract_chirp_fft(sweepset, min_freq=0.4, max_freq=40.0, **params):
     freq = freqs[0]
     low_freq_max = min_freq + 0.1
     results = chirp_sweep_features(amp, freq, phase, low_freq_max=low_freq_max)
+    results['amp'] = amp
+    results['freq'] = freq
+    results['phase'] = phase
     return results
 
 def extract_chirp_peaks(sweepset, **params):
@@ -226,6 +229,7 @@ def chirp_sweep_features(amp, freq, phase=None, low_freq_max=1.0):
         "peak_impedance": z_max,
         "low_freq_impedance": low_freq_amp,
     }
+
     if phase is not None:
         if any(phase > 0):
             i_sync = np.flatnonzero(phase > 0)[-1]

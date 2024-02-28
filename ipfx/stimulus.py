@@ -47,7 +47,7 @@ class StimulusOntology(object):
 
         self.ramp_names = ( "Ramp",)
 
-        self.chirp_names = ( "Chirp",)
+        self.chirp_names = ( "Chirp", "Chirp A Threshold")
 
         self.long_square_names = ( "Long Square",
                                    "Long Square Threshold",

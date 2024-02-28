@@ -1190,6 +1190,21 @@
   [
     [
       "code",
+      "C2CHIRPA",
+      "C2CHIRPA180503"
+    ],
+    [
+      "core",
+      "Core 2"
+    ],
+    [
+      "name",
+      "Chirp A Threshold"
+    ]
+  ],
+  [
+    [
+      "code",
       "Nuc_IC_0"
     ],
     [
@@ -1353,7 +1368,7 @@
     ],
     [
       "code",
-      "X7Ramp",
+      "X7RAMP",
       "RAMP",
       "ramp"
     ]

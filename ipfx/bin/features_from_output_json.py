@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import argparse
 from pathlib import Path
+import os
 import allensdk.core.json_utilities as ju
 import logging
 
@@ -75,6 +76,8 @@ spike_adapt_features = [
     'downstroke',
     'threshold_v',
     'peak_v',
+    'peak_deltav',
+    'peak_deltav_5th'
     # 'fast_trough_deltav',
 ]
 invert_features = ["first_isi"]
@@ -308,8 +311,18 @@ def get_spike_adapt_ratio_features(features, sweep, nth_spike=4):
         if nspikes <= nth_spike:
             value = None
         else:
-            nth = spikes_set[nth_spike-1].get(feature)
-            first = spikes_set[0].get(feature)
+            if feature == 'peak_deltav' or feature == 'peak_deltav_5th':   # Spike amplitude
+                if feature == 'peak_deltav_5th':
+                    nth_spike = 5
+                peak = spikes_set[nth_spike - 1].get('peak_v')
+                offset = spikes_set[nth_spike - 1].get('trough_v')
+                nth = peak - offset if (peak and offset) else None
+                peak = spikes_set[0].get('peak_v')
+                offset = spikes_set[0].get('trough_v')
+                first = peak - offset if (peak and offset) else None
+            else:
+                nth = spikes_set[nth_spike-1].get(feature)
+                first = spikes_set[0].get(feature)
             value = nth/first if (nth and first) else None
         record.update({feature+suffix: value})
     return record
@@ -354,7 +367,15 @@ def process_file_list(files, cell_ids=None, output=None, save_qc_info=False,
         # could be smarter and check specimen_id vs name
             record[index_var] = Path(file).parent.name
         records.append(record)
+
     ephys_df = pd.DataFrame.from_records(records, index=index_var)
+    try:
+        ephys_array_outputs = ephys_df[['amp_chirp', 'freq_chirp', 'phase_chirp']]
+        ephys_array_outputs.reset_index(inplace=True)
+        ephys_array_outputs.to_feather(os.path.splitext(output)[0] + '_array.feather')
+        ephys_df.drop(columns=['amp_chirp', 'freq_chirp', 'phase_chirp'], inplace=True)
+    except:
+        pass
     if output:
         ephys_df.to_csv(output)
     return ephys_df
