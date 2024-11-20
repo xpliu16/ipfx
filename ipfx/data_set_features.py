@@ -124,7 +124,6 @@ def extractors_for_sweeps(sweep_set,
 @fallback_on_error(fallback_value={})
 def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
-
     # extract sweep-level features
     lu.log_pretty_header("Analyzing sweep features:",level=2)
 
@@ -191,7 +190,6 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
 @fallback_on_error()
 def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     lu.log_pretty_header("Long Squares:", level=2)
-
     long_square_sweep_numbers = data_set.get_sweep_numbers(
         data_set.ontology.long_square_names,
         clamp_mode=data_set.CURRENT_CLAMP)
@@ -231,7 +229,6 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
         lsq_features,
         [dict(sweep_number=sn) for sn in long_square_sweep_numbers]
         )
-
     if long_squares_features["hero_sweep"] is None:
         raise er.FeatureError("Could not find hero sweep.")
 

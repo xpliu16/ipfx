@@ -132,13 +132,12 @@ def fit_fi_slope(stim_amps, avg_rates):
     if len(stim_amps) < 2:
         raise er.FeatureError("Cannot fit f-I curve slope with less than two sweeps")
 
-    x = stim_amps
-    y = avg_rates
+    x = np.array(stim_amps)
+    y = np.array(avg_rates)
 
     A = np.vstack([x, np.ones_like(x)]).T
     m, c = np.linalg.lstsq(A, y,rcond=None)[0]
-
-    return m
+    return m, x, y
 
 
 def get_isis(t, spikes):

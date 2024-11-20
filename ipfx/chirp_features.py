@@ -45,7 +45,7 @@ def extract_chirp_fft(sweepset, min_freq=0.4, max_freq=40.0, **params):
     freqs = []
     for i, sweep in enumerate(sweepset.sweeps):
         try:
-            if max(sweep.t) > 22.5:  # Make sure protocol didn't terminate early
+            if max(sweep.t) > 21:  # Make sure protocol didn't terminate early
                 amp, phase, freq = chirp_sweep_amp_phase(sweep, min_freq=min_freq, max_freq=max_freq, **params)
                 amps.append(amp)
                 phases.append(phase)

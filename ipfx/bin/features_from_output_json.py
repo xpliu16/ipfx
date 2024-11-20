@@ -62,6 +62,7 @@ ramp_spike_features = base_spike_features + [
 ]
 ls_spike_features = base_spike_features + [
     'trough_v',
+    'trough_t',
     'fast_trough_v',
     'postap_slope'
 ]
@@ -92,6 +93,8 @@ ls_features = sag_features + [
     "v_baseline",
     "rheobase_i",
     "fi_fit_slope",
+    "fi_stim_curr",
+    "fi_avg_f",
     "vm_for_sag",
     "input_resistance",
     "input_resistance_ss",
@@ -108,7 +111,6 @@ def extract_pipeline_output(output_json, save_qc_info=False):
         cell_qc_features = output.get("sweep_extraction", {}).get("cell_features")
         if cell_qc_features is not None:
             record.update({key+"_qc": val for key, val in cell_qc_features.items()})
-
         qc_state = output.get('qc', {}).get('cell_state')
         if qc_state is not None:
             record['fail_tags_qc'] = '; '.join(qc_state.pop('fail_tags'))
@@ -370,10 +372,13 @@ def process_file_list(files, cell_ids=None, output=None, save_qc_info=False,
 
     ephys_df = pd.DataFrame.from_records(records, index=index_var)
     try:
-        ephys_array_outputs = ephys_df[['amp_chirp', 'freq_chirp', 'phase_chirp']]
+        ephys_array_outputs = ephys_df[['amp_chirp', 'freq_chirp', 'phase_chirp', 'fi_stim_curr', 'fi_avg_f']]
+        #ephys_array_outputs = ephys_df[['amp_chirp', 'freq_chirp', 'phase_chirp']]
         ephys_array_outputs.reset_index(inplace=True)
         ephys_array_outputs.to_feather(os.path.splitext(output)[0] + '_array.feather')
-        ephys_df.drop(columns=['amp_chirp', 'freq_chirp', 'phase_chirp'], inplace=True)
+        print(output)
+        print(os.path.splitext(output)[0] + '_array.feather')
+        ephys_df.drop(columns=['amp_chirp', 'freq_chirp', 'phase_chirp', 'fi_stim_curr', 'fi_avg_f'], inplace=True)
     except:
         pass
     if output:

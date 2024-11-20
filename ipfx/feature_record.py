@@ -24,6 +24,8 @@ def build_cell_feature_record(cell_features):
         cell_record["tau"] = nan_get(base, "tau")
         cell_record["vm_for_sag"] = nan_get(base, "vm_for_sag")
         cell_record["f_i_curve_slope"] = nan_get(base, "fi_fit_slope")
+        cell_record["fi_stim_curr"] = nan_get(base, "fi_stim_curr")
+        cell_record["fi_avg_f"] = nan_get(base,"fi_avg_f")
 
         # change the base to hero sweep
         base = cell_features["long_squares"]["hero_sweep"]
@@ -92,4 +94,4 @@ def nan_get(obj, key):
     if v is None:
         return None
     else:
-        return None if np.isnan(v) else v
+        return None if np.isnan(v).all() else v

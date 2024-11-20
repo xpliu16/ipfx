@@ -154,7 +154,6 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         features.update(spiking_features)
         features.update(subthresh_features)
-
         return features
 
     def analyze_suprathreshold(self, sweep_set):
@@ -172,9 +171,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         features["rheobase_sweep"] = rheobase_sweep_features
         features["spiking_sweeps"] = spiking_sweep_features
 
-        features["fi_fit_slope"] = strf.fit_fi_slope(spiking_sweep_features["stim_amp"].values,
+        slope, stim_curr, avg_f = strf.fit_fi_slope(spiking_sweep_features["stim_amp"].values,
                                                      spiking_sweep_features["avg_rate"].values)
-
+        features["fi_fit_slope"] = slope
+        features["fi_stim_curr"] = stim_curr
+        features["fi_avg_f"] = avg_f
         # find hero sweep
         hero_sweep_features = self.find_hero_sweep(rheobase_i, spiking_sweep_features)
 
