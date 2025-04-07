@@ -122,6 +122,7 @@ class SpikeFeatureExtractor(object):
                                                             adp_max_delta_t=0.030)
 
         widths, widths_thresh = spkf.find_widths(v, t, thresholds, peaks, trough_details[1], clipped)
+        AP_t, AP_v = spkf.excerpt_first_spike(v, t, thresholds)
 
 
         # Points where we care about t, v, and i if available
@@ -145,7 +146,7 @@ class SpikeFeatureExtractor(object):
 
         # Redundant, but ensures that DataFrame has right number of rows
         # Any better way to do it?
-        spikes_df = DataFrame(data=thresholds, columns=["threshold_index"])
+        spikes_df = DataFrame(data=thresholds, columns=["threshold_index"], dtype=object)
         spikes_df["clipped"] = clipped
 
         for k, all_vals in vit_data_indexes.items():
@@ -196,6 +197,8 @@ class SpikeFeatureExtractor(object):
 
         spikes_df["width"] = widths
         spikes_df["width_suprathresh"] = widths_thresh
+        spikes_df["AP_t"] = AP_t
+        spikes_df["AP_v"] = AP_v
 
         spikes_df["upstroke_downstroke_ratio"] = spikes_df["upstroke"] / -spikes_df["downstroke"]
 

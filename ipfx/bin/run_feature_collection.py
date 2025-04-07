@@ -117,6 +117,7 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
                 "avg_rate",
                 "isi_cv",
                 "latency",
+                "last_spike_t",
                 "median_isi",
                 "adapt",
             ]

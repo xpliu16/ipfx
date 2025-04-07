@@ -27,6 +27,7 @@ def basic_spike_train_features(t, spikes_df, start=None, end=None, exclude_clipp
             # ~ net isi variation
             "isi_norm_sq_var": norm_sq_diff(isis),
             "latency": latency(t, thresholds, start),
+            "last_spike_t": last_spike_t(t, thresholds, start),
             "isi_cv": cv(isis),
             "isi_cv_late": cv(isis, spike_times, start=start+0.5),
             "ir_late": irregularity_ratio(isis, spike_times, start=start+0.5),
@@ -168,6 +169,14 @@ def latency(t, spikes, start):
 
     return t[spikes[0]] - start
 
+def last_spike_t (t, spikes, start):
+    if len(spikes) == 0:
+        return np.nan
+    
+    if start is None:
+        start = t[0]
+
+    return t[spikes[-1]] - start
 
 def average_rate(t, spikes, start, end):
     """Calculate average firing rate during interval between `start` and `end`.

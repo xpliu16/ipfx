@@ -193,6 +193,7 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     long_square_sweep_numbers = data_set.get_sweep_numbers(
         data_set.ontology.long_square_names,
         clamp_mode=data_set.CURRENT_CLAMP)
+    long_square_full_fI = len(data_set.filtered_sweep_table(stimuli={'Long Square Full fI'})) 
     if len(long_square_sweep_numbers) == 0:
         raise er.FeatureError("No long_square sweeps available for feature extraction")
 
@@ -231,6 +232,8 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
         )
     if long_squares_features["hero_sweep"] is None:
         raise er.FeatureError("Could not find hero sweep.")
+    
+    long_squares_features ['full_fI'] = long_square_full_fI > 0
 
     return long_squares_features
 

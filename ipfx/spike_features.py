@@ -95,8 +95,21 @@ def find_widths(v, t, spike_indexes, peak_indexes, trough_indexes, clipped=None)
     widths_thresh = _widths_from_levels(thresh_to_peak_levels, v, t, spike_indexes, peak_indexes, trough_indexes, ~clipped)
     return widths, widths_thresh
 
+def excerpt_first_spike(v, t, spike_indexes):
+    if not spike_indexes.size:
+        return np.array([])
+    sp_time = t[spike_indexes[0]]
+    sp_ind_left = min(range(len(t)), key=lambda i: abs(t[i] - (sp_time - 0.005)))     # 5 ms before threshold crossing
+    sp_ind_right = min(range(len(t)), key=lambda i: abs(t[i] - (sp_time + 0.025)))     # 25 ms before threshold crossing
+    #AP_t = [float('nan')] * len(spike_indexes)
+    #AP_v = [float('nan')] * len(spike_indexes)
+    AP_t = np.empty_like(spike_indexes, dtype=object)
+    AP_v = np.empty_like(spike_indexes, dtype=object)
+    AP_t[0] = t[sp_ind_left:sp_ind_right]
+    AP_v[0] = v[sp_ind_left:sp_ind_right]
+    return AP_t, AP_v
 
-def _widths_from_levels(width_levels, v, t, spike_indexes, peak_indexes, trough_indexes, use_indexes):
+def _widths_from_levels (width_levels, v, t, spike_indexes, peak_indexes, trough_indexes, use_indexes):
     width_starts = np.zeros_like(trough_indexes) * np.nan
     width_starts[use_indexes] = np.array([pk - np.flatnonzero(v[pk:spk:-1] <= wl)[0] if
                     np.flatnonzero(v[pk:spk:-1] <= wl).size > 0 else np.nan for pk, spk, wl

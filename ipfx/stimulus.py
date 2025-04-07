@@ -52,7 +52,8 @@ class StimulusOntology(object):
         self.long_square_names = ( "Long Square",
                                    "Long Square Threshold",
                                    "Long Square SupraThreshold",
-                                   "Long Square SubThreshold" )
+                                   "Long Square SubThreshold",
+                                   "Long Square Full fI" )
 
         self.coarse_long_square_names = ( "C1LSCOARSE",)
         self.short_square_triple_names = ( "Short Square - Triple", )

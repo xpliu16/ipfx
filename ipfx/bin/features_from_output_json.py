@@ -21,6 +21,7 @@ hero_sweep_features = [
     'adapt',
     'avg_rate',
     'latency',
+    'last_spike_t',
     'first_isi',
     'mean_isi',
     "median_isi",
@@ -31,7 +32,7 @@ rheo_sweep_features = [
     'latency',
     'avg_rate',
     'mean_isi',
-    'first_isi',
+    'first_isi'
 ]
 mean_sweep_features = [
     'adapt',
@@ -52,6 +53,8 @@ base_spike_features = [
     'upstroke',
     'downstroke',
     'width_suprathresh',
+    'AP_t',
+    'AP_v'
 ]
 
 ramp_spike_features = base_spike_features + [
@@ -64,7 +67,9 @@ ls_spike_features = base_spike_features + [
     'trough_v',
     'trough_t',
     'fast_trough_v',
-    'postap_slope'
+    'postap_slope',
+    'AP_t',
+    'AP_v'
 ]
 rheo_last_spike_features = [
     'fast_trough_v',
@@ -99,6 +104,7 @@ ls_features = sag_features + [
     "input_resistance",
     "input_resistance_ss",
     "tau",
+    "full_fI"
 ]
 
 
@@ -293,13 +299,13 @@ def add_features_to_record(features, feature_data, record, suffix=""):
 def get_ahp_delay_ratio(sweep):
     spikes_set = sweep.get("spikes", [])
     if len(spikes_set) < 2:
+        ahp = None
         value = None
     else:
         isi = spikes_set[-1]['peak_t'] - spikes_set[-2]['peak_t']
         ahp = spikes_set[-2]['trough_t'] - spikes_set[-2]['peak_t']
         value = ahp/isi
-    return {'ahp_delay_ratio': value}
-
+    return {'ahp_delay_ratio': value, 'ahp_delay': ahp}
 
 def get_spike_adapt_ratio_features(features, sweep, nth_spike=4):
     spikes_set = sweep.get("spikes", [])
@@ -372,13 +378,13 @@ def process_file_list(files, cell_ids=None, output=None, save_qc_info=False,
 
     ephys_df = pd.DataFrame.from_records(records, index=index_var)
     try:
-        ephys_array_outputs = ephys_df[['amp_chirp', 'freq_chirp', 'phase_chirp', 'fi_stim_curr', 'fi_avg_f']]
+        ephys_array_outputs = ephys_df[['amp_chirp', 'freq_chirp', 'phase_chirp', 'fi_stim_curr', 'fi_avg_f', 'AP_t_rheo', 'AP_v_rheo', 'AP_t_hero', 'AP_v_hero']]
         #ephys_array_outputs = ephys_df[['amp_chirp', 'freq_chirp', 'phase_chirp']]
         ephys_array_outputs.reset_index(inplace=True)
         ephys_array_outputs.to_feather(os.path.splitext(output)[0] + '_array.feather')
         print(output)
         print(os.path.splitext(output)[0] + '_array.feather')
-        ephys_df.drop(columns=['amp_chirp', 'freq_chirp', 'phase_chirp', 'fi_stim_curr', 'fi_avg_f'], inplace=True)
+        ephys_df.drop(columns=['amp_chirp', 'freq_chirp', 'phase_chirp', 'fi_stim_curr', 'fi_avg_f', 'AP_t_rheo', 'AP_v_rheo', 'AP_t_hero', 'AP_v_hero'], inplace=True)
     except:
         pass
     if output:

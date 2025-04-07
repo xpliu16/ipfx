@@ -10,7 +10,7 @@ def build_cell_feature_record(cell_features):
                            "trough_v", "trough_t",
                            "fast_trough_v", "fast_trough_t",
                            "slow_trough_v", "slow_trough_t",
-                           "threshold_v", "threshold_i", "threshold_t",
+                           "threshold_v", "threshold_i", "threshold_t", "AP_v", "AP_t"
                            ]
 
     if cell_features["long_squares"]:
@@ -31,6 +31,7 @@ def build_cell_feature_record(cell_features):
         base = cell_features["long_squares"]["hero_sweep"]
         cell_record["adaptation"] = nan_get(base, "adapt")
         cell_record["latency"] = nan_get(base, "latency")
+        cell_record["last_spike_t"] = nan_get(base, "last_spike_t")
         cell_record["avg_isi"] = nan_get(base, "mean_isi")
 
         # mean feature of first spike for
