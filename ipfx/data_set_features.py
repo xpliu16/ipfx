@@ -353,12 +353,10 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
     (cell_features['chirps'], feature_states['chirps_state']) = \
         extract_cell_chirp_features(data_set)
-
     # compute sweep features
     iclamp_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)
     sweep_features, feature_states['sweep_features_state'] = \
         extract_sweep_features(data_set, iclamp_sweeps)
-
     # shuffle peak deflection for the subthreshold long squares
     if (not feature_states['long_squares_state']['failed_fx']
         and not feature_states['sweep_features_state']['failed_fx']):

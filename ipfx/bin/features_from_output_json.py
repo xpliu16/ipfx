@@ -44,6 +44,10 @@ max_sweep_features = [
     # "isi_cv",
     "avg_rate",
 ]
+spk10_sweep_features = [
+    'adapt',
+    'latency'
+]
 base_spike_features = [
     'upstroke_downstroke_ratio',
     'threshold_v',
@@ -237,6 +241,10 @@ def get_complete_long_square_features(long_squares_analysis):
         ahp_features = get_ahp_delay_ratio(sweep)
         add_features_to_record('all', ahp_features, record, suffix="_hero")
 
+    if 'spk10_sweep' in long_squares_analysis:
+        sweep = long_squares_analysis.get('spk10_sweep',{})
+        add_features_to_record(spk10_sweep_features, sweep, record, suffix='_spk10')
+
     if 'subthreshold_sweeps' in long_squares_analysis:
         sweeps = long_squares_analysis.get('subthreshold_sweeps',{})
         sweep_features_df = pd.DataFrame.from_records(sweeps)
@@ -292,7 +300,7 @@ def invert_feature_values(features, record):
             record[feature + "_inv" + suffix] = 1/val if val is not None else None
 
 def add_features_to_record(features, feature_data, record, suffix=""):
-    if features is 'all':
+    if features == 'all':
         features = feature_data.keys()
     record.update({feature+suffix: feature_data.get(feature, np.nan) for feature in features})
 

@@ -181,6 +181,9 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         features['hero_sweep'] = hero_sweep_features
 
+        spk10_sweep_features = self.find_spk10_sweep(spiking_sweep_features)
+        features['spk10_sweep'] = spk10_sweep_features
+
         return features
 
     def analyze_subthreshold(self, sweep_set):
@@ -251,7 +254,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
             if k in out:
                 out[k] = self._sweeps_to_dict(out[k], extra_params)
 
-        for k in [ "hero_sweep", "rheobase_sweep" ]:
+        for k in [ "hero_sweep", "rheobase_sweep", "spk10_sweep" ]:
             if k in out:
                 out[k] = self._sweep_to_dict(out[k], extra_params)
 
@@ -296,6 +299,15 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
             raise er.FeatureError("Cannot find hero sweep.")
 
         return hero_features
+    
+    def find_spk10_sweep(self,spiking_features):
+        spiking_features = spiking_features.sort_values("stim_amp")
+
+        spiking_features_spk10 = spiking_features[spiking_features["avg_rate"] >= 10]
+        if spiking_features_spk10.empty:
+            raise er.FeatureError("Cannot find spk10 sweep.")
+        else:
+            return spiking_features_spk10.iloc[0]
 
 
 class ShortSquareAnalysis(StimulusProtocolAnalysis):
