@@ -1344,27 +1344,7 @@
   [
     [
       "code",
-      "X5LP_Rheo"
-    ],
-    [
-      "name",
-      "Long Square"
-    ]
-  ],
-  [
-    [
-      "code",
       "X4PS_SupraThresh"
-    ],
-    [
-      "name",
-      "Long Square"
-    ]
-  ],
-  [
-    [
-      "code",
-      "X6PS_SupraThresh"
     ],
     [
       "name",
@@ -1384,27 +1364,7 @@
   [
     [
       "code",
-      "X6PS_SupraThresh_DA_1"
-    ],
-    [
-      "name",
-      "Long Square Full fI"
-    ]
-  ],
-  [
-    [
-      "code",
       "X6SP_Rheo"
-    ],
-    [
-      "name",
-      "Short Square"
-    ]
-  ],
-  [
-    [
-      "code",
-      "X3SP_Rheo"
     ],
     [
       "name",
